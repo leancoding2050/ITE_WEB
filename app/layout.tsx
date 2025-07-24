@@ -1,6 +1,9 @@
+// app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { SessionProvider } from "next-auth/react";
+import Navbar from "@/components/Navbar"; // 假設 Navbar.tsx 在 components 資料夾中
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,10 +27,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <SessionProvider>
+          <Navbar /> {/* 添加 Navbar 組件 */}
+          <main>{children}</main> {/* 將頁面內容放入 main 標籤 */}
+        </SessionProvider>
       </body>
     </html>
   );

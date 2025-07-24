@@ -34,3 +34,36 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+
+14-7-2025
+
+今天完成了teacher 的create CourseModul client side 及 server side的 bug
+今天完成了teacher 的create Course client side 及 server side的 bug
+今天完成了teacher login 後 的跳頁，及navber 的顯示
+明天可能做user login 後頁面，及shop page加入用戶資訊的欄表
+
+
+15-18-7-2025
+
+是在進行排堂功能的 構思 ,client side及server side 的建立
+
+19-7-2025
+完成了整個課堂排堂功能（client side及server side），但是要再進一 步測試 ，
+
+接下來在client side 進行些顯示問題想看看可以進行修改
+
+之後接下來要做payment stripe 要測試 ，及admin page 的各頁面的修改
+
+20－23 －7 －2025
+
+23 -在制作老師, admin 的FullCalendar 顯示問題 并接下來應該繼續進行修改client side 頁面
+
+22 - 老師的假期要轉入model User 中 使用 才是合理使用情況，之後修改了create teacherhoilday 的client side schema serser side function and edit teacherholiday client side schema serser side function
+
+21 - 使用model teacherholiday 來做create teacherhoilday 的client side schema serser side function and edit teacherholiday client side schema serser side function 并在FullCalendar 顯示 以及payment function 成功 但未進行比錢功能測試及修復大部分client side頁面
+
+24－7－2025
+在typelists  statuelists 及 headertypeLists 加入了刪除鍵
+之後要確定course的分類是誰決定 (admin / teacher?) 決定 (NITTP/自家/ERB)
