@@ -8,7 +8,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   try {
     const { id } = await params; // 等待 params Promise 解析
 console.log('in server id :', id ,"--end--")
-    const res = await db.teacherholiday.findUnique({
+    const res = await db.user.findUnique({
       where: {
         id: String(id), // 確保 id 是字符串類型
       },

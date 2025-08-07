@@ -16,6 +16,8 @@ const NITTPListsPage = () => {
     fetchNITTPDataLists();
     }, []);
 
+    console.log("GetNITTPDataLists : ",GetNITTPDataLists ,"-- End --")
+
     return (
         <>
         <Link href={"/admin/DataLists/NITTPLists/CreateNITTP"}>

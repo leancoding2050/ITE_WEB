@@ -130,7 +130,7 @@ const Create_CourseModul_Form = () => {
           <FormField
             control={user_CourseModul_form.control}
             name="teaching_materials"
-            render={({ field }) => (
+            render={() => (
               <FormItem>
                 <FormLabel>教材</FormLabel>
                 <FormControl>

@@ -8,7 +8,7 @@ import { CreateSafeAction } from "@/lib/create-safe-action";
 
 const handler = async (data: InputType) : Promise<ReturnType> => { 
 
-    const { ERB_code, title,description  , school_name , day , time , time_h , teacher ,Ispublic,date_start,date_end} = data;
+    const { ERB_code, title,description  , school_name , day , time , time_h , teacher ,Ispublic} = data;
 
     let erb_data;
 

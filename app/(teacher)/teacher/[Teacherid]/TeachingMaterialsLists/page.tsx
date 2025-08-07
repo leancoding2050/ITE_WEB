@@ -8,6 +8,10 @@ interface CourseModul {
   id: string;
   title: string;
   description: string;
+  TeacherId: string; // 添加 TeacherId 字段
+  Teaching_Materials: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const TeachingMaterialsPage = () => {
@@ -23,14 +27,16 @@ const TeachingMaterialsPage = () => {
         if (!res.ok) {
           throw new Error(`API 錯誤: ${res.status} ${res.statusText}`);
         }
-        const data = await res.json();
-        setCourseModul(data);
+        const data: CourseModul[] = await res.json();
+        // 過濾出 TeacherId 與 params.Teacherid 匹配的數據
+        const filteredData = data.filter((modul) => modul.TeacherId === TeacherId);
+        setCourseModul(filteredData);
       } catch (error) {
         console.error("fetchCourseModul error:", error);
       }
     };
     fetchCourseModul();
-  }, []);
+  }, [TeacherId]); // 添加 TeacherId 作為依賴項
 
   console.log("CourseModul: ", CourseModul);
 

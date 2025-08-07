@@ -1,3 +1,4 @@
+// components/CreateForm/Create-CourseTeacher-Form.tsx
 "use client";
 
 import {
@@ -10,11 +11,10 @@ import {
 } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState, useTransition } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm, SubmitHandler, useFieldArray } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { CreateCourseAction } from "@/app/actions/Create/Create_Course";
 import { Switch } from "@/components/ui/switch";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -26,175 +26,182 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "../ui/textarea";
+import { toast } from "react-toastify";
 import { CreateCourseTeacherSchema } from "@/app/actions/Create/Create_CourseTeacher/schema";
 import { CreateCourseTeacherAction } from "@/app/actions/Create/Create_CourseTeacher";
 
+// 定義型別
+interface CourseType {
+  id: string;
+  typename: string;
+}
 
-const Create_CourseTeacher_Form = () => {
+interface CourseModule {
+  id: string;
+  title: string;
+  description: string;
+}
+
+interface Teacher {
+  name: string;
+}
+
+const timeOptions = [
+  { id: "morning" as const, label: "上午" },
+  { id: "afternoon" as const, label: "下午" },
+  { id: "evening" as const, label: "晚上" },
+  { id: "full_day" as const, label: "全日" },
+] as const;
+
+// type TimeRangeValue = "morning" | "afternoon" | "evening" | "full_day";
+
+const CreateCourseTeacherForm = () => {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const params = useParams();
-  const TeacherId = params.Teacherid as string;
-  const [GetTypesData, setGetTypesData] = useState<
-    { id: string; typename: string }[]
-  >([]);
-  const [GetCourseModul, setGetCourseModul] = useState<
-    { id: string; title: string; description: string }[]
-  >([]);
-  const [GetTeacherData, setGetTeacherData] = useState<{ name: string } | null>(
-    null
-  );
+  const teacherId = params.Teacherid as string;
+  const [courseTypes, setCourseTypes] = useState<CourseType[]>([]);
+  const [courseModules, setCourseModules] = useState<CourseModule[]>([]);
+  const [teacherData, setTeacherData] = useState<Teacher | null>(null);
 
-  const timeOptions = [
-    { id: "morning" as const, label: "上午" },
-    { id: "afternoon" as const, label: "下午" },
-    { id: "evening" as const, label: "晚上" },
-    { id: "full_day" as const, label: "全日" },
-  ] as const;
-
-  type TimeRangeValue = "morning" | "afternoon" | "evening" | "full_day";
-
-  const TCourse_create_form = useForm<z.infer<typeof CreateCourseTeacherSchema>>({
+  const form = useForm<z.infer<typeof CreateCourseTeacherSchema>>({
     resolver: zodResolver(CreateCourseTeacherSchema),
     mode: "onChange",
     defaultValues: {
       title: "",
       description: "",
-      course_code: "",
-      school_name: "",
-      Number_of_days: 0,
-      courseModulId: null,
-      time_hours: 0,
+      courseCode: "",
+      schoolName: "",
+      numberOfDays: 0,
+      courseModuleId: null,
+      timeHours: 0,
       teacher: [],
-      Ispublic: false,
-      Isproduct: false,
-      TimeRange: [],
+      isPublic: false,
+      isProduct: false,
+      timeRanges: [], // 使用 timeRanges
       type: [],
-      teacher_id: TeacherId,
-      start_date: undefined,
-      end_date: undefined,
-      start_time: undefined,
-      end_time: undefined,
+      teacherId,
+      startDate: null,
+      endDate: null,
+      courseDates: [],
+      weekday: null,
+      classroom: null,
     },
   });
 
-  // 監聽 courseModulId 的變化，動態設置 description
-  const selectedCourseModulId = TCourse_create_form.watch("courseModulId");
+  // 使用 useFieldArray 管理 timeRanges 陣列
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "timeRanges",
+  });
+
+  // 驗證 teacherId
   useEffect(() => {
-    if (selectedCourseModulId && selectedCourseModulId !== "none") {
-      const selectedModul = GetCourseModul.find(
-        (modul) => modul.id === selectedCourseModulId
+    if (!teacherId) {
+      toast.error("無效的教師 ID");
+      router.push("/teachers");
+    }
+  }, [teacherId, router]);
+
+  // 監聽 courseModuleId 的變化，動態設置 description
+  const selectedCourseModuleId = form.watch("courseModuleId");
+  useEffect(() => {
+    if (selectedCourseModuleId && selectedCourseModuleId !== "none") {
+      const selectedModule = courseModules.find(
+        (module) => module.id === selectedCourseModuleId
       );
-      if (selectedModul) {
-        TCourse_create_form.setValue("description", selectedModul.description);
+      if (selectedModule) {
+        form.setValue("description", selectedModule.description);
       }
     } else {
-      TCourse_create_form.setValue("description", "");
+      form.setValue("description", "");
     }
-  }, [selectedCourseModulId, GetCourseModul, TCourse_create_form]);
+  }, [selectedCourseModuleId, courseModules, form]);
 
   // 設置 teacher 字段的默認值
   useEffect(() => {
-    if (GetTeacherData?.name) {
-      TCourse_create_form.setValue("teacher", [GetTeacherData.name]);
+    if (teacherData?.name) {
+      form.setValue("teacher", [teacherData.name]);
     }
-  }, [GetTeacherData, TCourse_create_form]);
+  }, [teacherData, form]);
 
+  // 獲取數據
   useEffect(() => {
     const fetchTypesData = async () => {
       try {
-        const res = await fetch(`/api/Type/Get_Type_Lists`);
-        const data = await res.json();
-        
-        if (Array.isArray(data)) {
-          const validData = data.filter((item: any) =>
-            typeof item === "object" && "id" in item && "typename" in item
-          );
-          setGetTypesData(validData);
-        } else {
-          console.error("Get_Type_Lists API 返回非陣列資料", data);
-          setGetTypesData([]);
+        const res = await fetch("/api/Type/Get_Type_Lists");
+        if (!res.ok) {
+          throw new Error(`無法獲取課程類型: ${res.status}`);
         }
+        const data: CourseType[] = await res.json();
+        setCourseTypes(data);
       } catch (error) {
-        console.error("fetchTypesData error:", error);
-        setGetTypesData([]);
+        toast.error(error instanceof Error ? error.message : "無法載入課程類型");
+        setCourseTypes([]);
       }
     };
 
-    const fetchCourseModul = async () => {
+    const fetchCourseModules = async () => {
       try {
-        const res = await fetch(`/api/Course/Get_CourseModul_Lists`);
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          const validData = data.filter((item: any) =>
-            typeof item === "object" && "id" in item && "title" in item && "description" in item
-          );
-          setGetCourseModul(validData);
-        } else {
-          console.error("Get_CourseModul_Lists API 返回非陣列資料", data);
-          setGetCourseModul([]);
+        const res = await fetch("/api/Course/Get_CourseModul_Lists");
+        if (!res.ok) {
+          throw new Error(`無法獲取課程模組: ${res.status}`);
         }
+        const data: CourseModule[] = await res.json();
+        setCourseModules(data);
       } catch (error) {
-        console.error("fetchCourseModul error:", error);
-        setGetCourseModul([]);
+        toast.error(error instanceof Error ? error.message : "無法載入課程模組");
+        setCourseModules([]);
       }
     };
 
-    const fetchUserData = async (TeacherId: string) => {
+    const fetchTeacherData = async () => {
       try {
-        const res = await fetch(`/api/user/Get_User_Lists_by_Id/${TeacherId}`);
-        const data = await res.json();
-        if (data && typeof data === "object" && "name" in data) {
-          setGetTeacherData(data);
-        } else {
-          console.error("fetchUserData 返回無效數據", data);
-          setGetTeacherData(null);
+        const res = await fetch(`/api/user/Get_User_Lists_by_Id/${teacherId}`);
+        if (!res.ok) {
+          throw new Error(`無法獲取教師資料: ${res.status}`);
         }
+        const data: Teacher = await res.json();
+        setTeacherData(data);
       } catch (error) {
-        console.error("fetchUserData error:", error);
-        setGetTeacherData(null);
+        toast.error(error instanceof Error ? error.message : "無法載入教師資料");
+        setTeacherData(null);
       }
     };
 
-    fetchUserData(TeacherId);
+    fetchTeacherData();
     fetchTypesData();
-    fetchCourseModul();
-  }, [TeacherId]);
+    fetchCourseModules();
+  }, [teacherId]);
 
-  console.log("GetTypesData: ", GetTypesData);
-  console.log("GetCourseModul: ", GetCourseModul);
-  console.log("GetTeacherData: ", GetTeacherData);
-
-  const TCourse_create_form_onSubmit: SubmitHandler<
-    z.infer<typeof CreateCourseTeacherSchema>
-  > = (values) => {
-    console.log("-- 課程輸入數據 -- :", values, "-- 結束 --");
+  const onSubmit: SubmitHandler<z.infer<typeof CreateCourseTeacherSchema>> = (values) => {
     startTransition(() => {
       CreateCourseTeacherAction(values).then((result) => {
         if (result.data) {
-          router.push(`/teacher/${TeacherId}/CourseLists`);
+          toast.success("課程創建成功");
+          router.push(`/teacher/${teacherId}/CourseLists`);
         } else {
-          console.error("Create course failed:", result.error);
-          alert(result.error || "創建課程失敗，請稍後重試");
+          toast.error(result.error || "創建課程失敗，請稍後重試");
         }
       });
     });
   };
 
-  console.log("Error: ", TCourse_create_form.formState.errors, "-- End --");
+  console.log("courseTypes : " ,courseTypes , "-- End --");
+  console.log("courseModules : " ,courseModules , "-- End --");
+  console.log("teacherData: ",teacherData ,"-- End --")
+
+  console.log(" -- Bug -- ", form.formState.errors ,"-- End --")
 
   return (
     <div className="bg-gray-800 text-white min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <h1 className="text-2xl font-bold mb-6">創建課程</h1>
-        <Form {...TCourse_create_form}>
-          <form
-            onSubmit={TCourse_create_form.handleSubmit(TCourse_create_form_onSubmit)}
-            className="space-y-6"
-          >
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
-                control={TCourse_create_form.control}
+                control={form.control}
                 name="title"
                 render={({ field }) => (
                   <FormItem>
@@ -205,6 +212,7 @@ const Create_CourseTeacher_Form = () => {
                         disabled={isPending}
                         placeholder="輸入課程標題"
                         className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
+                        aria-label="課程標題"
                       />
                     </FormControl>
                     <FormMessage className="text-red-400" />
@@ -212,7 +220,7 @@ const Create_CourseTeacher_Form = () => {
                 )}
               />
               <FormField
-                control={TCourse_create_form.control}
+                control={form.control}
                 name="description"
                 render={({ field }) => (
                   <FormItem>
@@ -224,6 +232,7 @@ const Create_CourseTeacher_Form = () => {
                         placeholder="輸入課程描述"
                         className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
                         rows={4}
+                        aria-label="課程描述"
                       />
                     </FormControl>
                     <FormMessage className="text-red-400" />
@@ -231,8 +240,8 @@ const Create_CourseTeacher_Form = () => {
                 )}
               />
               <FormField
-                control={TCourse_create_form.control}
-                name="course_code"
+                control={form.control}
+                name="courseCode"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-white">課程代碼</FormLabel>
@@ -242,6 +251,7 @@ const Create_CourseTeacher_Form = () => {
                         disabled={isPending}
                         placeholder="輸入課程代碼"
                         className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
+                        aria-label="課程代碼"
                       />
                     </FormControl>
                     <FormMessage className="text-red-400" />
@@ -249,8 +259,8 @@ const Create_CourseTeacher_Form = () => {
                 )}
               />
               <FormField
-                control={TCourse_create_form.control}
-                name="school_name"
+                control={form.control}
+                name="schoolName"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-white">學校名稱</FormLabel>
@@ -260,6 +270,7 @@ const Create_CourseTeacher_Form = () => {
                         disabled={isPending}
                         placeholder="輸入學校名稱"
                         className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
+                        aria-label="學校名稱"
                       />
                     </FormControl>
                     <FormMessage className="text-red-400" />
@@ -267,8 +278,8 @@ const Create_CourseTeacher_Form = () => {
                 )}
               />
               <FormField
-                control={TCourse_create_form.control}
-                name="Number_of_days"
+                control={form.control}
+                name="numberOfDays"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-white">課程天數</FormLabel>
@@ -281,6 +292,7 @@ const Create_CourseTeacher_Form = () => {
                         onChange={(e) => field.onChange(Number(e.target.value))}
                         value={field.value || ""}
                         className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
+                        aria-label="課程天數"
                       />
                     </FormControl>
                     <FormMessage className="text-red-400" />
@@ -288,51 +300,8 @@ const Create_CourseTeacher_Form = () => {
                 )}
               />
               <FormField
-                control={TCourse_create_form.control}
-                name="TimeRange"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-white">時段</FormLabel>
-                    <FormControl>
-                      <div className="space-y-2">
-                        {timeOptions.map((time) => (
-                          <div key={time.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={time.id}
-                              checked={field.value?.includes(time.id) || false}
-                              onCheckedChange={(checked) => {
-                                const currentValues = Array.isArray(field.value)
-                                  ? (field.value as TimeRangeValue[])
-                                  : [];
-                                if (checked) {
-                                  field.onChange([...currentValues, time.id]);
-                                } else {
-                                  field.onChange(
-                                    currentValues.filter((v) => v !== time.id)
-                                  );
-                                }
-                              }}
-                              disabled={isPending}
-                              className="border-gray-600 data-[state=checked]:bg-gray-600"
-                            />
-                            <label
-                              htmlFor={time.id}
-                              className="text-sm font-medium text-white peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                              {time.label}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </FormControl>
-                    <FormMessage className="text-red-400" />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={TCourse_create_form.control}
-                name="time_hours"
+                control={form.control}
+                name="timeHours"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-white">課程時數</FormLabel>
@@ -345,6 +314,7 @@ const Create_CourseTeacher_Form = () => {
                         onChange={(e) => field.onChange(Number(e.target.value))}
                         value={field.value || ""}
                         className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
+                        aria-label="課程時數"
                       />
                     </FormControl>
                     <FormMessage className="text-red-400" />
@@ -352,7 +322,7 @@ const Create_CourseTeacher_Form = () => {
                 )}
               />
               <FormField
-                control={TCourse_create_form.control}
+                control={form.control}
                 name="teacher"
                 render={({ field }) => (
                   <FormItem>
@@ -372,6 +342,7 @@ const Create_CourseTeacher_Form = () => {
                           )
                         }
                         value={field.value.join(", ")}
+                        aria-label="教師名稱"
                       />
                     </FormControl>
                     <FormMessage className="text-red-400" />
@@ -379,8 +350,8 @@ const Create_CourseTeacher_Form = () => {
                 )}
               />
               <FormField
-                control={TCourse_create_form.control}
-                name="Ispublic"
+                control={form.control}
+                name="isPublic"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-white">是否公開</FormLabel>
@@ -390,6 +361,7 @@ const Create_CourseTeacher_Form = () => {
                         onCheckedChange={field.onChange}
                         disabled={isPending}
                         className="data-[state=checked]:bg-gray-600 data-[state=unchecked]:bg-gray-700"
+                        aria-label="是否公開"
                       />
                     </FormControl>
                     <FormMessage className="text-red-400" />
@@ -397,8 +369,27 @@ const Create_CourseTeacher_Form = () => {
                 )}
               />
               <FormField
-                control={TCourse_create_form.control}
-                name="courseModulId"
+                control={form.control}
+                name="isProduct"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-white">是否為產品</FormLabel>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isPending}
+                        className="data-[state=checked]:bg-gray-600 data-[state=unchecked]:bg-gray-700"
+                        aria-label="是否為產品"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-400" />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="courseModuleId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-white">課程模組</FormLabel>
@@ -408,14 +399,17 @@ const Create_CourseTeacher_Form = () => {
                         value={field.value ?? "none"}
                         disabled={isPending}
                       >
-                        <SelectTrigger className="bg-gray-700 text-white border-gray-600 focus:border-gray-500">
+                        <SelectTrigger
+                          className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
+                          aria-label="課程模組"
+                        >
                           <SelectValue placeholder="選擇課程模組" />
                         </SelectTrigger>
                         <SelectContent className="bg-gray-700 text-white border-gray-600">
                           <SelectItem value="none">無模組</SelectItem>
-                          {GetCourseModul.map((modul) => (
-                            <SelectItem key={modul.id} value={modul.id}>
-                              {modul.title}
+                          {courseModules.map((module) => (
+                            <SelectItem key={module.id} value={module.id}>
+                              {module.title}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -426,14 +420,14 @@ const Create_CourseTeacher_Form = () => {
                 )}
               />
               <FormField
-                control={TCourse_create_form.control}
+                control={form.control}
                 name="type"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-white">課程類型</FormLabel>
                     <FormControl>
                       <div className="space-y-2">
-                        {GetTypesData.map((type) => (
+                        {courseTypes.map((type) => (
                           <div key={type.id} className="flex items-center space-x-2">
                             <Checkbox
                               id={type.id}
@@ -452,6 +446,7 @@ const Create_CourseTeacher_Form = () => {
                               }}
                               disabled={isPending}
                               className="border-gray-600 data-[state=checked]:bg-gray-600"
+                              aria-label={type.typename}
                             />
                             <label
                               htmlFor={type.id}
@@ -467,20 +462,250 @@ const Create_CourseTeacher_Form = () => {
                   </FormItem>
                 )}
               />
+              <div
+                className="hidden"
+              >
+            <FormField
+                            control={form.control}
+                            name="startDate"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-white">開始日期</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    disabled={isPending}
+                                    type="date"
+                                    value={field.value || ""}
+                                    onChange={(e) => field.onChange(e.target.value || null)}
+                                    className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
+                                    aria-label="開始日期"
+                                  />
+                                </FormControl>
+                                <FormMessage className="text-red-400" />
+                              </FormItem>
+                            )}
+                          />
+
+              </div>
+             
+                           <div
+                className="hidden"
+              >
+              <FormField
+                control={form.control}
+                name="endDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-white">結束日期</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        disabled={isPending}
+                        type="date"
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                        className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
+                        aria-label="結束日期"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-400" />
+                  </FormItem>
+                )}
+              />
+              </div>
+
+                            <div
+                className="hidden"
+              >
+<FormField
+  control={form.control}
+  name="courseDates"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel className="text-white">課程日期</FormLabel>
+      <FormControl>
+        <Input
+          {...field}
+          disabled={isPending}
+          placeholder="輸入課程日期（以逗號分隔，例如 2025-08-01,2025-08-02）"
+          onChange={(e) => {
+            const dates = e.target.value
+              .split(",")
+              .map((d) => d.trim())
+              .filter((d) => d.length > 0 && !isNaN(Date.parse(d))); // 驗證日期格式
+            field.onChange(dates);
+          }}
+          value={field.value ? field.value.join(", ") : ""} // 處理 undefined
+          className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
+          aria-label="課程日期"
+        />
+      </FormControl>
+      <FormMessage className="text-red-400" />
+    </FormItem>
+  )}
+/></div>
+
+              <div
+                className="hidden"
+              >
+              <FormField
+                control={form.control}
+                name="weekday"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-white">星期</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        disabled={isPending}
+                        placeholder="輸入星期（例如 Monday）"
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                        className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
+                        aria-label="星期"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-400" />
+                  </FormItem>
+                )}
+              /></div>
+              <div
+                className="hidden"
+              >
+              <FormField
+                control={form.control}
+                name="classroom"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-white">課室</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        disabled={isPending}
+                        placeholder="輸入課室（例如 Room 101）"
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                        className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
+                        aria-label="課室"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-400" />
+                  </FormItem>
+                )}
+              /></div>
+
+              {/* 動態時間範圍輸入 */}
+              <div className="col-span-2">
+                <FormLabel className="text-white">時間範圍</FormLabel>
+                {fields.map((field, index) => (
+                  <div key={field.id} className="flex items-center space-x-4 mb-4">
+                    <FormField
+                      control={form.control}
+                      name={`timeRanges.${index}.timeRange`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              disabled={isPending}
+                            >
+                              <SelectTrigger
+                                className="bg-gray-700 text-white border-gray-600 focus:border-gray-500 w-32"
+                                aria-label="時間段"
+                              >
+                                <SelectValue placeholder="選擇時間段" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-gray-700 text-white border-gray-600">
+                                {timeOptions.map((time) => (
+                                  <SelectItem key={time.id} value={time.id}>
+                                    {time.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage className="text-red-400" />
+                        </FormItem>
+                      )}
+                    />
+                    <div 
+                      className="hidden"
+                    >
+                    <FormField
+                      control={form.control}
+                      name={`timeRanges.${index}.starttime`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              disabled={isPending}
+                              type="time"
+                              value={field.value || ""}
+                              onChange={(e) => field.onChange(e.target.value || null)}
+                              className="bg-gray-700 text-white border-gray-600 focus:border-gray-500 w-32"
+                              aria-label="開始時間"
+                            />
+                          </FormControl>
+                          <FormMessage className="text-red-400" />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`timeRanges.${index}.endtime`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              disabled={isPending}
+                              type="time"
+                              value={field.value || ""}
+                              onChange={(e) => field.onChange(e.target.value || null)}
+                              className="bg-gray-700 text-white border-gray-600 focus:border-gray-500 w-32"
+                              aria-label="結束時間"
+                            />
+                          </FormControl>
+                          <FormMessage className="text-red-400" />
+                        </FormItem>
+                      )}
+                    />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => remove(index)}
+                      disabled={isPending}
+                    >
+                      移除
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => append({ timeRange: "morning", starttime: null, endtime: null })}
+                  disabled={isPending}
+                  className="mt-2"
+                >
+                  添加時間範圍
+                </Button>
+              </div>
             </div>
 
-            <input
-              type="hidden"
-              value={TeacherId}
-              {...TCourse_create_form.register("teacher_id")}
-            />
+            <input type="hidden" value={teacherId} {...form.register("teacherId")} />
 
             <Button
               type="submit"
               disabled={isPending}
               className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
             >
-              提交
+              {isPending ? "提交中..." : "提交"}
             </Button>
           </form>
         </Form>
@@ -489,118 +714,4 @@ const Create_CourseTeacher_Form = () => {
   );
 };
 
-export default Create_CourseTeacher_Form;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-              {/* <FormField
-                control={Course_create_form.control}
-                name="start_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-white">開始日期（可選）</FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        format="YYYY-MM-DD"
-                        value={field.value ? new Date(field.value) : null}
-                        onChange={(value) => {
-                          console.log("start_date value:", value);
-                          field.onChange(
-                            value ? value.toDate().toISOString().split("T")[0] : undefined
-                          );
-                        }}
-                        disabled={isPending}
-                        className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-red-400" />
-                  </FormItem>
-                )}
-              /> */}
-              {/* <FormField
-                control={Course_create_form.control}
-                name="end_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-white">結束日期（可選）</FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        format="YYYY-MM-DD"
-                        value={field.value ? new Date(field.value) : null}
-                        onChange={(value) => {
-                          console.log("end_date value:", value);
-                          field.onChange(
-                            value ? value.toDate().toISOString().split("T")[0] : undefined
-                          );
-                        }}
-                        disabled={isPending}
-                        className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-red-400" />
-                  </FormItem>
-                )}
-              /> */}
-              {/* <FormField
-                control={Course_create_form.control}
-                name="start_time"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-white">開始時間（可選）</FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        disableDayPicker
-                        format="HH:mm"
-                        plugins={[<TimePicker position="bottom" />]}
-                        value={field.value ? field.value : null}
-                        onChange={(value) => {
-                          console.log("start_time value:", value);
-                          field.onChange(value ? value.format("HH:mm") : undefined);
-                        }}
-                        disabled={isPending}
-                        className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-red-400" />
-                  </FormItem>
-                )}
-              /> */}
-              {/* <FormField
-                control={Course_create_form.control}
-                name="end_time"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-white">結束時間（可選）</FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        disableDayPicker
-                        format="HH:mm"
-                        plugins={[<TimePicker position="bottom" />]}
-                        value={field.value ? field.value : null}
-                        onChange={(value) => {
-                          console.log("end_time value:", value);
-                          field.onChange(value ? value.format("HH:mm") : undefined);
-                        }}
-                        disabled={isPending}
-                        className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-red-400" />
-                  </FormItem>
-                )}
-              /> */}
+export default CreateCourseTeacherForm;

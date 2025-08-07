@@ -51,7 +51,7 @@
 
 import { db } from "@/lib/db";
 import { CreateTeacherHolidaySchema } from "./schema";
-import { InputType, ReturnType, TeacherHolidayData } from "./types";
+import { InputType, ReturnType } from "./types";
 import { CreateSafeAction } from "@/lib/create-safe-action";
 
 const handler = async (data: InputType): Promise<ReturnType> => {

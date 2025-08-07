@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
     if(req.method === 'GET'){
-        const res = await db.coursePorductType.findMany()
+        const res = await db.courseProductType.findMany()
         return NextResponse.json(res)
     }
 }

@@ -1020,20 +1020,26 @@
 
 import { useEffect, useState, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
+import { EventDropArg } from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, parseISO, addDays, differenceInDays, getDay, addWeeks } from "date-fns";
+import { toast } from "react-toastify";
 
 // 定義時間段枚舉類型
 type TimeRangeEnum = "morning" | "afternoon" | "evening" | "full_day";
 
 // 定義表單 schema
 const CourseDateSchema = z.object({
-  start_date: z.string().optional().nullable(),
-  end_date: z.string().optional().nullable(),
+  start_date: z.string().refine((val) => !val || !isNaN(Date.parse(val)), {
+    message: "無效的開始日期",
+  }).optional().nullable(),
+  end_date: z.string().refine((val) => !val || !isNaN(Date.parse(val)), {
+    message: "無效的結束日期",
+  }).optional().nullable(),
   timeRanges: z
     .array(
       z.object({
@@ -1045,14 +1051,25 @@ const CourseDateSchema = z.object({
     .optional(),
   weekday: z.string().optional().nullable(),
   classroom: z.string().optional().nullable(),
-});
+}).refine(
+  (data) => {
+    if (data.start_date && data.end_date && data.start_date !== "" && data.end_date !== "") {
+      return parseISO(data.start_date) <= parseISO(data.end_date);
+    }
+    return true;
+  },
+  {
+    message: "結束日期必須晚於或等於開始日期",
+    path: ["end_date"],
+  }
+);
 
 type CourseDateForm = z.infer<typeof CourseDateSchema>;
 
 type CourseTimeRange = {
   id: string;
   courseId: string;
-  timeRange: TimeRangeEnum; // 使用枚舉類型
+  timeRange: TimeRangeEnum;
   start_time: string | null;
   end_time: string | null;
   createdAt: string;
@@ -1063,24 +1080,25 @@ type Course = {
   id: string;
   title: string;
   description: string;
-  course_code: string;
-  school_name: string;
-  Number_of_days: number;
-  time_hours: number;
-  TimeRange: TimeRangeEnum[]; // 使用枚舉類型
+  courseCode: string;
+  schoolName: string;
+  numberOfDays: number;
+  timeHours: number;
+  timeRanges: TimeRangeEnum[];
   teacher: string[];
-  teacher_id: string;
-  Ispublic: boolean;
-  type: string[];
-  courseModulId: string | null;
-  start_date: string | null;
-  end_date: string | null;
-  Coursedates: string[];
+  teacherId: string;
+  isPublic: boolean;
+  isProduct: false,
+  types: string[];
+  courseModuleId: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  courseDates: string[];
   weekday: string | null;
   classroom: string | null;
   createdAt: string;
   updatedAt: string;
-  CourseTimeRanges: CourseTimeRange[];
+  courseTimeRanges: CourseTimeRange[];
 };
 
 const timeRangeOptions: Record<TimeRangeEnum, { label: string; start: string; end: string }> = {
@@ -1095,9 +1113,9 @@ const ArrangeCoursePage = () => {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [calendarDates, setCalendarDates] = useState<string[]>([]);
   const [dateRangeError, setDateRangeError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const calendarRef = useRef<FullCalendar>(null);
 
-  // 表單鉤子
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<CourseDateForm>({
     resolver: zodResolver(CourseDateSchema),
     defaultValues: {
@@ -1109,13 +1127,11 @@ const ArrangeCoursePage = () => {
     },
   });
 
-  // 監聽表單中的 start_date、end_date 和 weekday
   const startDate = watch("start_date");
   const endDate = watch("end_date");
   const selectedWeekday = watch("weekday");
   const timeRanges = watch("timeRanges");
 
-  // 定義星期對應
   const weekdays = [
     { value: "0", label: "星期日" },
     { value: "1", label: "星期一" },
@@ -1126,30 +1142,29 @@ const ArrangeCoursePage = () => {
     { value: "6", label: "星期六" },
   ];
 
-  // 驗證 TimeRange 是否有效
   const isValidTimeRange = (range: string): range is TimeRangeEnum => {
     return ["morning", "afternoon", "evening", "full_day"].includes(range);
   };
 
-  // 獲取課程數據
   useEffect(() => {
     const fetchCourseData = async () => {
+      setIsLoading(true);
       try {
-        const response = await fetch("/api/Course/Get_Course_Lists");
+        const response = await fetch("/api/courses");
         if (!response.ok) {
           throw new Error(`請求失敗: ${response.status}`);
         }
-        const data = await response.json();
+        const data: Course[] = await response.json();
         setCourses(data);
         if (data.length > 0) {
           setSelectedCourse(data[0]);
-          setCalendarDates(data[0].Coursedates || []);
+          setCalendarDates(data[0].courseDates || []);
           reset({
-            start_date: data[0].start_date || "",
-            end_date: data[0].end_date || "",
-            timeRanges: data[0].CourseTimeRanges
-              .filter((tr: CourseTimeRange) => isValidTimeRange(tr.timeRange))
-              .map((tr: CourseTimeRange) => ({
+            start_date: data[0].startDate || "",
+            end_date: data[0].endDate || "",
+            timeRanges: data[0].courseTimeRanges
+              .filter((tr) => isValidTimeRange(tr.timeRange))
+              .map((tr) => ({
                 timeRange: tr.timeRange,
                 start_time: tr.start_time || "",
                 end_time: tr.end_time || "",
@@ -1159,26 +1174,27 @@ const ArrangeCoursePage = () => {
           });
         }
       } catch (error) {
-        console.error("Error fetching data:", error);
+        toast.error(error instanceof Error ? error.message : "無法載入課程數據");
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchCourseData();
   }, [reset]);
 
-  // 當選擇課程時，更新表單和月曆
   useEffect(() => {
     if (selectedCourse) {
       reset({
-        start_date: selectedCourse.start_date || "",
-        end_date: selectedCourse.end_date || "",
-        timeRanges: selectedCourse.CourseTimeRanges
+        start_date: selectedCourse.startDate || "",
+        end_date: selectedCourse.endDate || "",
+        timeRanges: selectedCourse.courseTimeRanges
           .filter((tr) => isValidTimeRange(tr.timeRange))
           .map((tr) => ({
             timeRange: tr.timeRange,
             start_time: tr.start_time || "",
             end_time: tr.end_time || "",
           }))
-          || selectedCourse.TimeRange
+          || selectedCourse.timeRanges
               .filter(isValidTimeRange)
               .map((range) => ({
                 timeRange: range,
@@ -1188,11 +1204,10 @@ const ArrangeCoursePage = () => {
         weekday: selectedCourse.weekday || null,
         classroom: selectedCourse.classroom || "",
       });
-      setCalendarDates(selectedCourse.Coursedates || []);
+      setCalendarDates(selectedCourse.courseDates || []);
     }
   }, [selectedCourse, reset]);
 
-  // 當 start_date 和 weekday 變化時，自動生成指定星期的日期
   useEffect(() => {
     if (selectedCourse && startDate && startDate !== "") {
       const start = parseISO(startDate);
@@ -1207,13 +1222,13 @@ const ArrangeCoursePage = () => {
           currentDate = addDays(currentDate, 1);
         }
 
-        while (count < selectedCourse.Number_of_days) {
+        while (count < selectedCourse.numberOfDays) {
           newDates.push(format(currentDate, "yyyy-MM-dd"));
           currentDate = addWeeks(currentDate, 1);
           count++;
         }
       } else {
-        for (let i = 0; i < selectedCourse.Number_of_days; i++) {
+        for (let i = 0; i < selectedCourse.numberOfDays; i++) {
           const date = addDays(start, i);
           newDates.push(format(date, "yyyy-MM-dd"));
         }
@@ -1225,15 +1240,14 @@ const ArrangeCoursePage = () => {
     }
   }, [startDate, selectedWeekday, selectedCourse]);
 
-  // 當 start_date 或 end_date 變化時，檢查日期範圍是否滿足 Number_of_days
   useEffect(() => {
     if (selectedCourse && startDate && startDate !== "" && endDate && endDate !== "") {
       const start = parseISO(startDate);
       const end = parseISO(endDate);
       const daysDifference = differenceInDays(end, start) + 1;
-      if (daysDifference < selectedCourse.Number_of_days) {
+      if (daysDifference < selectedCourse.numberOfDays) {
         setDateRangeError(
-          `日期範圍（${daysDifference} 天）少於課程持續天數（${selectedCourse.Number_of_days} 天）`
+          `日期範圍（${daysDifference} 天）少於課程持續天數（${selectedCourse.numberOfDays} 天）`
         );
       } else {
         setDateRangeError(null);
@@ -1243,17 +1257,14 @@ const ArrangeCoursePage = () => {
     }
   }, [startDate, endDate, selectedCourse]);
 
-  // 當選擇 TimeRange 時，設置對應的開始和結束時間
   const handleTimeRangeToggle = (timeRange: TimeRangeEnum) => {
     const currentTimeRanges = timeRanges || [];
     const existingIndex = currentTimeRanges.findIndex((tr) => tr.timeRange === timeRange);
 
     let updatedTimeRanges: CourseDateForm["timeRanges"] = [];
     if (existingIndex >= 0) {
-      // 移除時間段
       updatedTimeRanges = currentTimeRanges.filter((_, index) => index !== existingIndex);
     } else {
-      // 新增時間段，預設使用 timeRangeOptions 的開始和結束時間
       updatedTimeRanges = [
         ...currentTimeRanges,
         {
@@ -1267,56 +1278,57 @@ const ArrangeCoursePage = () => {
     setValue("timeRanges", updatedTimeRanges);
   };
 
-  // 提交表單更新課程
-// 提交表單更新課程
-const onSubmit = async (data: CourseDateForm) => {
-  if (!selectedCourse) return;
-
-  // 記錄用戶提交的表單數據
-  console.log("-- 課程輸入數據 -- :", data, "-- 結束 --");
-
-  if (dateRangeError) {
-    alert(dateRangeError);
-    return;
-  }
-
-  try {
-    const response = await fetch(`/api/Course/Update_Course/${selectedCourse.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        start_date: data.start_date,
-        end_date: data.end_date,
-        timeRanges: data.timeRanges,
-        Coursedates: calendarDates,
-        weekday: data.weekday,
-        classroom: data.classroom,
-      }),
-    });
-    if (!response.ok) {
-      throw new Error(`更新失敗: ${response.status}`);
+  const onSubmit = async (data: CourseDateForm) => {
+    if (!selectedCourse) {
+      toast.warn("請選擇課程");
+      return;
     }
-    const updatedCourse = await response.json();
-    setCourses(courses.map((course) =>
-      course.id === updatedCourse.id ? updatedCourse : course
-    ));
-    setSelectedCourse(updatedCourse);
-    alert("課程更新成功");
-  } catch (error) {
-    console.error("Error updating course:", error);
-    alert("更新課程失敗，請稍後重試");
-  }
-};
-  // 處理日期點擊（新增或移除日期）
-  const handleDateClick = (arg: { dateStr: string }) => {
-    const clickedDate = arg.dateStr;
 
+    if (dateRangeError) {
+      toast.error(dateRangeError);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/courses/${selectedCourse.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          startDate: data.start_date,
+          endDate: data.end_date,
+          timeRanges: data.timeRanges,
+          courseDates: calendarDates,
+          weekday: data.weekday,
+          classroom: data.classroom,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(`更新失敗: ${response.status}`);
+      }
+      const updatedCourse = await response.json();
+      setCourses(courses.map((course) =>
+        course.id === updatedCourse.id ? updatedCourse : course
+      ));
+      setSelectedCourse(updatedCourse);
+      toast.success("課程更新成功");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "更新課程失敗，請稍後重試");
+    }
+  };
+
+  const handleDateClick = (arg: { dateStr: string }) => {
+    if (!selectedCourse) {
+      toast.warn("請選擇課程");
+      return;
+    }
+
+    const clickedDate = arg.dateStr;
     if (startDate && startDate !== "" && endDate && endDate !== "") {
       const start = parseISO(startDate);
       const end = parseISO(endDate);
       const clicked = parseISO(clickedDate);
       if (clicked < start || clicked > end) {
-        alert("只能在開始日期和結束日期之間選擇日期");
+        toast.warn("只能在開始日期和結束日期之間選擇日期");
         return;
       }
     }
@@ -1324,7 +1336,7 @@ const onSubmit = async (data: CourseDateForm) => {
     if (selectedWeekday && selectedWeekday !== "") {
       const clicked = parseISO(clickedDate);
       if (getDay(clicked) !== parseInt(selectedWeekday)) {
-        alert(`只能選擇${weekdays.find(w => w.value === selectedWeekday)?.label}的日期`);
+        toast.warn(`只能選擇${weekdays.find(w => w.value === selectedWeekday)?.label}的日期`);
         return;
       }
     }
@@ -1336,16 +1348,21 @@ const onSubmit = async (data: CourseDateForm) => {
       updatedDates = [...calendarDates, clickedDate];
     }
 
-    if (selectedCourse && updatedDates.length > selectedCourse.Number_of_days) {
-      alert(`課程日期數量不能超過 ${selectedCourse.Number_of_days} 天`);
+    if (updatedDates.length > selectedCourse.numberOfDays) {
+      toast.warn(`課程日期數量不能超過 ${selectedCourse.numberOfDays} 天`);
       return;
     }
 
     setCalendarDates(updatedDates);
   };
 
-  // 處理拖放事件
-  const handleEventDrop = (info: any) => {
+  const handleEventDrop = (info: EventDropArg) => {
+    if (!selectedCourse) {
+      toast.warn("請選擇課程");
+      info.revert();
+      return;
+    }
+
     const newDate = format(info.event.start!, "yyyy-MM-dd");
     const oldDate = info.oldEvent.start ? format(info.oldEvent.start, "yyyy-MM-dd") : null;
 
@@ -1354,7 +1371,7 @@ const onSubmit = async (data: CourseDateForm) => {
       const end = parseISO(endDate);
       const newDateParsed = parseISO(newDate);
       if (newDateParsed < start || newDateParsed > end) {
-        alert("只能在開始日期和結束日期之間拖放日期");
+        toast.warn("只能在開始日期和結束日期之間拖放日期");
         info.revert();
         return;
       }
@@ -1363,7 +1380,7 @@ const onSubmit = async (data: CourseDateForm) => {
     if (selectedWeekday && selectedWeekday !== "") {
       const newDateParsed = parseISO(newDate);
       if (getDay(newDateParsed) !== parseInt(selectedWeekday)) {
-        alert(`只能拖放到${weekdays.find(w => w.value === selectedWeekday)?.label}的日期`);
+        toast.warn(`只能拖放到${weekdays.find(w => w.value === selectedWeekday)?.label}的日期`);
         info.revert();
         return;
       }
@@ -1377,8 +1394,8 @@ const onSubmit = async (data: CourseDateForm) => {
       updatedDates.push(newDate);
     }
 
-    if (selectedCourse && updatedDates.length > selectedCourse.Number_of_days) {
-      alert(`課程日期數量不能超過 ${selectedCourse.Number_of_days} 天`);
+    if (updatedDates.length > selectedCourse.numberOfDays) {
+      toast.warn(`課程日期數量不能超過 ${selectedCourse.numberOfDays} 天`);
       info.revert();
       return;
     }
@@ -1386,15 +1403,20 @@ const onSubmit = async (data: CourseDateForm) => {
     setCalendarDates(updatedDates);
   };
 
-  // 將 Coursedates 轉換為 FullCalendar 事件
-  const calendarEvents = calendarDates.map((date) => ({
-    title: selectedCourse?.title || "課程",
-    date,
-    allDay: true,
-    backgroundColor: "#2563eb",
-    borderColor: "#2563eb",
-    textColor: "#ffffff",
-  }));
+  const calendarEvents = selectedCourse
+    ? calendarDates.map((date) => ({
+        title: selectedCourse.title,
+        date,
+        allDay: true,
+        backgroundColor: "#2563eb",
+        borderColor: "#2563eb",
+        textColor: "#ffffff",
+      }))
+    : [];
+
+  if (isLoading) {
+    return <div className="text-center py-10 text-white">載入中...</div>;
+  }
 
   return (
     <div className="bg-gray-800 text-white min-h-screen">
@@ -1419,7 +1441,7 @@ const onSubmit = async (data: CourseDateForm) => {
                     }`}
                   >
                     <p className="font-medium">{course.title}</p>
-                    <p className="text-sm text-gray-300">{course.course_code}</p>
+                    <p className="text-sm text-gray-300">{course.courseCode}</p>
                   </div>
                 ))}
               </div>
@@ -1454,7 +1476,7 @@ const onSubmit = async (data: CourseDateForm) => {
                   <div>
                     <label className="block text-sm font-medium">時間段</label>
                     <div className="mt-1 flex flex-wrap gap-2">
-                      {selectedCourse.TimeRange.filter(isValidTimeRange).map((range) => (
+                      {selectedCourse.timeRanges.filter(isValidTimeRange).map((range) => (
                         <button
                           key={range}
                           type="button"

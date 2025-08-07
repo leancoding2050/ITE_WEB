@@ -2,10 +2,8 @@
 import { NextResponse } from "next/server";
 import { CreateUserSchema } from "@/app/actions/Create/Create_user/schema";
 import { db } from "@/lib/db";
-import { CreateSafeAction } from "@/lib/create-safe-action";
 import { UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { z } from "zod";
 
 export async function POST(req: Request) {
   try {

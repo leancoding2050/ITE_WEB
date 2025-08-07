@@ -10,6 +10,5 @@ export const CreateERBSchema = z.object({
     time_h: z.number(),
     teacher:z.array(z.string()),
     Ispublic: z.boolean(),
-    date_start: z.string(),
-    date_end: z.string(),
+
 })

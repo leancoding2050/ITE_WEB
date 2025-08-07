@@ -17,33 +17,85 @@
 // };
 
 
-import { z } from "zod";
-import { CreateCourseTeacherSchema } from "./schema";
+// import { z } from "zod";
+// import { CreateCourseTeacherSchema } from "./schema";
+
+// export type InputType = z.infer<typeof CreateCourseTeacherSchema>;
+
+// export type CourseReturnType = {
+//   id: string;
+//   title: string;
+//   description: string;
+//   courseCode: string;
+//   schoolName: string;
+//   numberOfDays: number;
+//   courseModuleId: string | null;
+//   timeHours: number;
+//   teacher: string[];
+//   isPublic: boolean;
+//   isProduct: boolean;
+//   timeRange: ("morning" | "afternoon" | "evening" | "full_day")[];
+//   type: string[];
+//   teacherId: string;
+//   startDate: string | null;
+//   endDate: string | null;
+//   courseDates: string[];
+//   classroom: string | null;
+//   weekday: string | null;
+//   createdAt: Date;
+//   updatedAt: Date;
+//   CourseTimeRanges: {
+//     id: string;
+//     timeRange: string;
+//     starttime: string | null;
+//     endtime: string | null;
+//   }[];
+// };
+
+// export type ReturnType = {
+//   data?: CourseReturnType;
+//   error?: string;
+// };
+
+
+
+import { z } from 'zod';
+import { CreateCourseTeacherSchema } from './schema';
 
 export type InputType = z.infer<typeof CreateCourseTeacherSchema>;
+
+export type CourseTimeRangeReturnType = {
+  id: string;
+  timeRange: 'morning' | 'afternoon' | 'evening' | 'full_day';
+  starttime: string | null;
+  endtime: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export type CourseReturnType = {
   id: string;
   title: string;
   description: string;
-  course_code: string;
-  school_name: string;
-  Number_of_days: number;
-  time_hours: number;
-  TimeRange: ("morning" | "afternoon" | "evening" | "full_day")[]; // 明確定義 TimeRange
+  courseCode: string;
+  schoolName: string;
+  numberOfDays: number;
+  timeHours: number;
+  timeRanges: CourseTimeRangeReturnType[];
   teacher: string[];
-  teacher_id: string;
-  Ispublic: boolean;
-  Isproduct: boolean;
+  teacherId: string;
+  isPublic: boolean;
+  isProduct: boolean;
   type: string[];
-  courseModulId: string | null;
-  start_date: string | null;
-  end_date: string | null;
-  Coursedates: string[];
+  courseModuleId: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  courseDates: string[];
   classroom: string | null;
   weekday: string | null;
   createdAt: Date;
   updatedAt: Date;
+  Producted: boolean;
 };
 
 export type ReturnType = {

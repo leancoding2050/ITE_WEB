@@ -1,6 +1,86 @@
-'use client'
+// 'use client'
 
-import { useEffect, useState } from 'react';
+// import { useEffect, useState } from 'react';
+// import { useParams, useRouter } from 'next/navigation';
+// import { addToCart } from '@/app/actions/cart/shop-cart';
+
+// interface ProductDetail {
+//   id: string;
+//   title: string;
+//   description: string;
+//   price: number;
+//   createdAt?: string;
+//   updatedAt?: string;
+// }
+
+
+
+// export default function ProductPage() {
+//   const param_id = useParams();
+//   const productId = param_id.productsId as string;
+//   const userId = param_id.userId as string;
+//   const [quantity, setQuantity] = useState(1);
+//   const router = useRouter();
+//   const [getProduct, setGetProduct] = useState<ProductDetail | null>(null);
+
+//   useEffect(() => {
+//     const fetchProductDataLists = async (productId: string) => {
+//       try {
+//         const response = await fetch(`/api/product/Get_Product_Lists_by_ID/${productId}`);
+//         if (!response.ok) {
+//           throw new Error('無法獲取商品數據');
+//         }
+//         const data = await response.json();
+//         setGetProduct(data);
+//       } catch (error) {
+//         console.error('獲取商品數據失敗:', error);
+//       }
+//     };
+
+//     fetchProductDataLists(productId);
+//   }, [productId]);
+
+//   const handleAddToCart = async () => {
+//     if (getProduct) {
+//       await addToCart(productId, quantity, getProduct); // 傳遞三個參數
+//       router.push(`/user/${userId}/cart`);
+//     }
+//   };
+
+//   if (!getProduct) {
+//     return <div>載入中...</div>;
+//   }
+
+//   return (
+//     <div className="container mx-auto p-4">
+//       <h1 className="text-2xl font-bold mb-4">商品詳情</h1>
+//       <div className="mb-4">
+//         <h2 className="text-xl font-semibold">{getProduct.title}</h2>
+//         <p className="text-gray-600">{getProduct.description}</p>
+//         <p className="text-lg font-bold">價格: ${getProduct.price}</p>
+//       </div>
+//       <input
+//         type="number"
+//         value={quantity}
+//         onChange={(e) => setQuantity(Number(e.target.value))}
+//         min="1"
+//         className="border p-2 mr-2"
+//       />
+//       <button
+//         onClick={handleAddToCart}
+//         className="bg-blue-500 text-white px-4 py-2 rounded"
+//       >
+//         加入購物車
+//       </button>
+//     </div>
+//   );
+// }
+
+
+// app/(user)/user/[userId]/shop/[productsId]/page.tsx
+'use client';
+
+import { useEffect, useState, useTransition } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { addToCart } from '@/app/actions/cart/shop-cart';
 
@@ -9,22 +89,20 @@ interface ProductDetail {
   title: string;
   description: string;
   price: number;
+  real_price:number;
   createdAt?: string;
   updatedAt?: string;
 }
 
-type PageProps = {
-  params: {
-    productsId: string;
-  };
-};
-
-export default function ProductPage({ params }: PageProps) {
+export default function ProductPage() {
   const param_id = useParams();
   const productId = param_id.productsId as string;
+  const userId = param_id.userId as string;
   const [quantity, setQuantity] = useState(1);
   const router = useRouter();
   const [getProduct, setGetProduct] = useState<ProductDetail | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProductDataLists = async (productId: string) => {
@@ -37,6 +115,7 @@ export default function ProductPage({ params }: PageProps) {
         setGetProduct(data);
       } catch (error) {
         console.error('獲取商品數據失敗:', error);
+        setError('無法載入商品詳情');
       }
     };
 
@@ -44,23 +123,31 @@ export default function ProductPage({ params }: PageProps) {
   }, [productId]);
 
   const handleAddToCart = async () => {
-    if (getProduct) {
-      await addToCart(productId, quantity, getProduct); // 傳遞三個參數
-      router.push('/cart');
-    }
+    startTransition(async () => {
+      try {
+        await addToCart(productId, quantity); // 只傳遞 productId 和 quantity
+        router.push(`/user/${userId}/cart`);
+      } catch (error) {
+        console.error('加入購物車失敗:', error);
+        setError(
+          error instanceof Error ? `加入購物車失敗：${error.message}` : '無法加入購物車'
+        );
+      }
+    });
   };
 
   if (!getProduct) {
-    return <div>載入中...</div>;
+    return <div>{error ?? '載入中...'}</div>;
   }
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">商品詳情</h1>
+      {error && <div className="text-red-500 mb-4">{error}</div>}
       <div className="mb-4">
         <h2 className="text-xl font-semibold">{getProduct.title}</h2>
         <p className="text-gray-600">{getProduct.description}</p>
-        <p className="text-lg font-bold">價格: ${getProduct.price}</p>
+        <p className="text-lg font-bold">價格: ${(getProduct.real_price / 100).toFixed(2)}</p>
       </div>
       <input
         type="number"
@@ -68,12 +155,16 @@ export default function ProductPage({ params }: PageProps) {
         onChange={(e) => setQuantity(Number(e.target.value))}
         min="1"
         className="border p-2 mr-2"
+        disabled={isPending}
       />
       <button
         onClick={handleAddToCart}
-        className="bg-blue-500 text-white px-4 py-2 rounded"
+        className={`bg-blue-500 text-white px-4 py-2 rounded ${
+          isPending ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
+        disabled={isPending}
       >
-        加入購物車
+        {isPending ? '加入中...' : '加入購物車'}
       </button>
     </div>
   );

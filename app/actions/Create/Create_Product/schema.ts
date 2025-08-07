@@ -15,14 +15,15 @@ export const CreateProductSchema = z.object({
   title: z.string().min(1, { message: "標題不能為空" }),
   description: z.string().min(1, { message: "描述不能為空" }),
   price: z.number().min(1, { message: "價格必須大於 0" }),
+  real_price: z.number(),
   IsPublic: z.boolean(),
-  CoursePorductTypeArray: z.array(z.string()),
-  CoursePorductStatueArray: z.array(z.string()),
+  CourseProductTypeArray: z.array(z.string()),
+  CourseProductStatusArray: z.array(z.string()),
   courseId: z.string().uuid("無效的課程 ID").nullable(),
-}).refine((data) => data.CoursePorductTypeArray !== undefined, {
-  message: "CoursePorductTypeArray 不能為 undefined",
-  path: ["CoursePorductTypeArray"],
-}).refine((data) => data.CoursePorductStatueArray !== undefined, {
-  message: "CoursePorductStatueArray 不能為 undefined",
-  path: ["CoursePorductStatueArray"],
+}).refine((data) => data.CourseProductTypeArray !== undefined, {
+  message: "CourseProductTypeArray 不能為 undefined",
+  path: ["CourseProductTypeArray"],
+}).refine((data) => data.CourseProductStatusArray !== undefined, {
+  message: "CourseProductStatusArray 不能為 undefined",
+  path: ["CourseProductStatusArray"],
 });

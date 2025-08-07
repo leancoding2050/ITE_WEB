@@ -2,10 +2,19 @@
 
 import { useEffect, useState } from "react";
 
+interface AccountsData {
+    id: string;
+    client_name: string;
+    title: string;
+    description: string;
+    price: number;
+    total: number;
+    date: string;
+}
 
 const AccountsListsPage = () => {
 
-    const [ GetAccountsData , setGetAccountsData] = useState([]);
+    const [ GetAccountsData , setGetAccountsData] = useState<AccountsData | []>([]);
 
     useEffect(() => {
         const  fetchAccountsData = async () => {
@@ -16,6 +25,7 @@ const AccountsListsPage = () => {
         fetchAccountsData();
     }, []);
 
+    console.log("GetAccountsData : ", GetAccountsData , " -- End -- ")
 
     return (
         <>

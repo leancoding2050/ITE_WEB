@@ -67,3 +67,13 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 24－7－2025
 在typelists  statuelists 及 headertypeLists 加入了刪除鍵
 之後要確定course的分類是誰決定 (admin / teacher?) 決定 (NITTP/自家/ERB)
+
+
+26-7-2025
+
+建立了帳目用的Accounts server side function ,但是要有比錢後才可以看到效果 (過多數天吧)
+
+
+30-7-2025
+
+修改了 admin 中 的老師ID , product的 CSS ,首面shop 的商品出現了 ,明天要加入product的修改頁面, 以及看看shop 的bug

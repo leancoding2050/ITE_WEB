@@ -142,6 +142,10 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
+import { toast } from "react-toastify";
+import { Button } from "@/components/ui/button";
+import { DeleteHolidayAction } from "@/app/actions/Delete/Delete_Holiday";
+
 
 interface UserHoliday {
   id: string;
@@ -208,8 +212,31 @@ const TeacherCalendarPage = () => {
     }
   }, [TeacherId]);
 
-  console.log("GetHolidaysData :", GetHolidaysData, "-- End --");
-  console.log("GetTeacherCourses :", GetTeacherCourses, "-- End --");
+  // 刪除假期日期的函數
+  const handleDeleteHoliday = async (date: string) => {
+    try {
+      const result = await DeleteHolidayAction({
+        teacherId: TeacherId,
+        date,
+      });
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      // 更新本地狀態
+      if (result.data) {
+        setGetHolidaysData({
+          id: result.data.id,
+          teacherholidaysDateTime: result.data.teacherholidaysDateTime,
+        });
+        toast.success("假期日期已刪除");
+      }
+    } catch (error) {
+      console.error("Delete holiday error:", error);
+      toast.error(error instanceof Error ? error.message : "無法刪除假期日期");
+    }
+  };
 
   // 將日期轉為包含星期的格式
   const formatDateWithDay = (dateString: string) => {
@@ -263,13 +290,17 @@ const TeacherCalendarPage = () => {
       <div className="grid gap-2">
         {GetHolidaysData.teacherholidaysDateTime.length > 0 ? (
           GetHolidaysData.teacherholidaysDateTime.map((date, index) => (
-            <Link
-              key={`${GetHolidaysData.id}-${index}`}
-              href={`/teacher/${TeacherId}/calendar/EditHoliday?date=${date}`}
-              className="text-blue-500 hover:underline"
-            >
-              <div className="p-2 bg-gray-100 rounded">{formatDateWithDay(date)}</div>
-            </Link>
+            <div key={index} className="flex items-center justify-between p-2 bg-gray-100 rounded">
+              <span>{formatDateWithDay(date)}</span>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => handleDeleteHoliday(date)}
+                className="ml-2"
+              >
+                刪除
+              </Button>
+            </div>
           ))
         ) : (
           <div className="text-gray-500">無假期數據</div>

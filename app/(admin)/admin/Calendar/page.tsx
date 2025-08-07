@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import FullCalendar from "@fullcalendar/react";
+// import FullCalendar from "@fullcalendar/react";
 
 const CalendarPage = () => {
 
@@ -14,15 +14,21 @@ const CalendarPage = () => {
             const data = await response.json();
             setCourseData(data);
         }
-        fetchCourseData();
+        
 
         const fetchTeacherData = async () => {
             const response = await fetch("/api/user/Get_User_Lists");
             const data = await response.json();
-            setCourseData(data);
+            setGetTeacherData(data);
         }
 
+        fetchTeacherData();
+        fetchCourseData();
+
     }, []);
+
+    console.log("GetCourseData : ",GetCourseData,"-- End --")
+    console.log("GetTeacherData : ",GetTeacherData,"-- End --")
 
     return (
         <>

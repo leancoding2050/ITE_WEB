@@ -4,6 +4,7 @@ import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { UserRole } from "@/auth"; // 從 auth.ts 導入 UserRole
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -14,16 +15,14 @@ export default function Navbar() {
 
   // 定義不同角色的導航項目
   const adminNavItems = [
-    { name: "帳戶", href: "/admin/Accounts" },
-    // { name: "日曆", href: "/admin/Calendar" },
+    { name: "帳目", href: "/admin/Accounts" },
     { name: "課程列表", href: "/admin/CourseLists" },
-    { name: "數據列表", href: "/admin/DataLists" },
     { name: "產品列表", href: "/admin/ProductLists" },
     { name: "教師列表", href: "/admin/TeacherLists" },
     { name: "使用者列表", href: "/admin/UserLists" },
     { name: "狀態列表", href: "/admin/StatueLists" },
     { name: "類型清單", href: "/admin/TypeLists" },
-    { name: "關建字清單", href: "/admin/HeaderTypeLists" },
+    { name: "關鍵字清單", href: "/admin/HeaderTypeLists" },
   ];
 
   const teacherNavItems = teacherId
@@ -39,9 +38,8 @@ export default function Navbar() {
   const userNavItems = userId
     ? [
         { name: "商城", href: `/user/${userId}/shop` },
-        { name: "日曆", href: `/user/${userId}/calendar` },
-        { name: "證書列表", href: `/user/${userId}/certificateList` },
-        { name: "課程列表", href: `/user/${userId}/courseLists` },
+        { name: "日曆", href: `/user/${userId}/Calendar` },
+        { name: "課程列表", href: `/user/${userId}/CourseLists` },
       ]
     : [];
 
@@ -54,13 +52,25 @@ export default function Navbar() {
 
   // 根據 session 和角色選擇導航項目
   const navItems =
-    status === "authenticated" && session?.user?.role === "ADMIN"
+    status === "authenticated" && session?.user?.role === UserRole.ADMIN
       ? adminNavItems
-      : status === "authenticated" && session?.user?.role === "TEACHER"
+      : status === "authenticated" && session?.user?.role === UserRole.TEACHER
       ? teacherNavItems
-      : status === "authenticated" && session?.user?.role === "USER"
+      : status === "authenticated" && session?.user?.role === UserRole.USER
       ? userNavItems
       : publicNavItems;
+
+  // 動態設置 Logo 的 href
+  const logoHref =
+    status === "authenticated"
+      ? session?.user?.role === UserRole.ADMIN
+        ? "/admin"
+        : session?.user?.role === UserRole.TEACHER && teacherId
+        ? `/teacher/${teacherId}`
+        : session?.user?.role === UserRole.USER && userId
+        ? `/user/${userId}`
+        : "/"
+      : "/";
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: "/login" });
@@ -72,7 +82,7 @@ export default function Navbar() {
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="text-xl font-bold">
+            <Link href={logoHref} className="text-xl font-bold">
               MyApp
             </Link>
           </div>

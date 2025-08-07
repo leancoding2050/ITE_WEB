@@ -1,76 +1,93 @@
-"use client"
+"use client";
 
 import Link from "next/link";
-import { useParams} from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-
 interface TypeData {
-id: string;
-typename: string;
-author: string;
+  id: string;
+  typename: string;
+  author: string;
 }
 
 const TypesListsPage = () => {
-    const params = useParams();
-    console.log("params : ",  params)
-    const TeacherId = params.Teacherid as string;
-    console.log("TeacherId : ",  TeacherId)
-  const [getTyperData, setgetTyperData] = useState<TypeData []>([]);
-  const [error, setError] = useState("");
+  const params = useParams();
+  const teacherId = params.Teacherid as string;
+  const [getTypeData, setGetTypeData] = useState<TypeData[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(()=>{
-  const fetchData = async () => {
-    try {
-      const response = await fetch("/api/Type/Get_Type_Lists");
-      if (!response.ok) {
-        throw new Error(`請求失敗: ${response.status}`);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch("/api/Type/Get_Type_Lists");
+        if (!response.ok) {
+          throw new Error(`請求失敗: ${response.status}`);
+        }
+        const data = await response.json();
+        setGetTypeData(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "無法獲取類型列表");
       }
-      const data = await response.json();
-      setgetTyperData(data);
-    } catch (error) {
-      setError("Error fetching data");
-    }
+    };
+    fetchData();
+  }, []);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="bg-red-600 px-4 py-2 rounded-md">{error}</div>
+      </div>
+    );
   }
-    fetchData()
-  },[])
 
-  console.log("getTyperData :" , getTyperData , " -- End -- ")
-
-  if (error)
+  if (!getTypeData.length) {
     return (
-      <div className="ml-[50px] p-4 text-[#FF0000] font-noto-sans-tc">錯誤: {error}</div>
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-lg">無類型數據</div>
+      </div>
     );
-  if (!getTyperData)
-    return (
-      <div className="ml-[50px] p-4 text-[#1D475D] font-noto-sans-tc">無數據</div>
-    );
-
+  }
 
   return (
-
-    <div>
-      <Link href={`/teacher/${TeacherId}/TypesLists/CreateTypes`} >
-        建立類型
-      </Link>
-
-        TypesListsPage
-            {getTyperData.map((typeitem) => {
-        return (
-          <div key={typeitem.id}>
-            <Link href={`/admin/TypeLists/${typeitem.id}/edit`}>
-              {typeitem.typename}
-            </Link>
+    <div className="min-h-screen bg-gray-900 text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">類型列表</h1>
+          <Link
+            href={`/teacher/${teacherId}/TypesLists/CreateTypes`}
+            className="px-4 py-2 bg-blue-600 rounded-md text-sm font-medium hover:bg-blue-700"
+          >
+            建立類型
+          </Link>
+        </div>
+        <div className="bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 font-medium text-sm">
+            {/* <div className="text-gray-400">類型 ID</div> */}
+            <div className="text-gray-400">類型名稱</div>
+            {/* <div className="text-gray-400">作者</div> */}
           </div>
-        )
-
-
-      })}
-
-
+          {getTypeData.map((typeitem) => (
+            <div
+              key={typeitem.id}
+              className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 border-t border-gray-700 hover:bg-gray-700"
+            >
+              {/* <div>{typeitem.id}</div> */}
+              <div>{typeitem.typename}</div>
+              <div className="flex items-center space-x-2">
+                {/* <span>{typeitem.author}</span> */}
+                {/* <Link
+                  href={`/teacher/${teacherId}/TypesLists/${typeitem.id}/edit`}
+                  className="text-blue-400 hover:text-blue-300"
+                >
+                  編輯
+                </Link> */}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-  
-  )
-}
+    </div>
+  );
+};
 
-export default TypesListsPage
+export default TypesListsPage;

@@ -37,9 +37,10 @@ interface FormValues {
   title: string;
   description: string;
   price: number;
+  real_price: number;
   IsPublic: boolean;
-  CoursePorductTypeArray: string[];
-  CoursePorductStatueArray: string[];
+  CourseProductTypeArray: string[];
+  CourseProductStatusArray: string[];
   courseId: string | null;
 }
 
@@ -77,9 +78,10 @@ const Create_Product_Form = () => {
       title: "",
       description: "",
       price: 0,
+      real_price: 0,
       IsPublic: false,
-      CoursePorductTypeArray: [],
-      CoursePorductStatueArray: [],
+      CourseProductTypeArray: [],
+      CourseProductStatusArray: [],
       courseId: null,
     },
   });
@@ -190,12 +192,35 @@ const Create_Product_Form = () => {
               name="price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>價格</FormLabel>
+                  <FormLabel>原價格</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       disabled={isPending}
                       placeholder="價格"
+                      type="number"
+                      min="0"
+                      step="1"
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      value={field.value}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={user_Product_form.control}
+              name="real_price"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>想人給的價格</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      disabled={isPending}
+                      placeholder="家人們！！！"
                       type="number"
                       min="0"
                       step="1"

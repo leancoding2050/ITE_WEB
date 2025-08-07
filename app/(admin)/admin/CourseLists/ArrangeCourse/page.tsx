@@ -8,42 +8,50 @@
 // import { z } from "zod";
 // import { zodResolver } from "@hookform/resolvers/zod";
 // import { format, parseISO, addDays, differenceInDays, getDay, addWeeks } from "date-fns";
-// import { CreateCourseSchema } from "@/app/actions/Create/Create_Course/schema";
+// import { useRouter } from "next/navigation";
+// import { EventDropArg } from "@fullcalendar/core";
 
-// // // 定義表單 schema，新增週份和課室欄位
-// // const CourseDateSchema = z.object({
-// //   start_date: z.string().optional().nullable(),
-// //   end_date: z.string().optional().nullable(),
-// //   start_time: z.string().optional().nullable(),
-// //   end_time: z.string().optional().nullable(),
-// //   weekday: z.string().optional().nullable(), // 新增週份欄位
-// //   classroom: z.string().optional().nullable(), // 新增課室欄位
-// // });
+// const CourseDateSchema = z.object({
+//   startDate: z.string().optional().nullable(),
+//   endDate: z.string().optional().nullable(),
+//   startTime: z.string().optional().nullable(),
+//   endTime: z.string().optional().nullable(),
+//   weekday: z.string().optional().nullable(),
+//   classroom: z.string().optional().nullable(),
+// });
 
-// type CourseDateForm = z.infer<typeof CreateCourseSchema>;
+// type CourseDateForm = z.infer<typeof CourseDateSchema>;
 
 // type Course = {
 //   id: string;
 //   title: string;
 //   description: string;
-//   course_code: string;
-//   school_name: string;
-//   Number_of_days: number;
-//   time_hours: number;
-//   TimeRange: string[];
+//   courseCode: string;
+//   schoolName: string;
+//   numberOfDays: number;
+//   timeHours: number;
+//   CourseTimeRanges: { id: string; timeRange: string; starttime: string | null; endtime: string | null }[];
 //   teacher: string[];
-//   teacher_id: string;
-//   Ispublic: boolean;
+//   teacherId: string;
+//   isPublic: boolean;
 //   type: string[];
 //   courseModulId: string | null;
-//   start_date: string | null;
-//   end_date: string | null;
-//   start_time: string | null;
-//   end_time: string | null;
+//   startDate: string | null;
+//   endDate: string | null;
+//   startTime: string | null;
+//   endTime: string | null;
 //   Coursedates: string[];
-//   classroom: string | null; // 新增課室欄位
+//   weekday: string | null;
+//   classroom: string | null;
 //   createdAt: string;
 //   updatedAt: string;
+// };
+
+// const timeRangeOptions = {
+//   morning: { label: "上午", start: "09:00", end: "13:00" },
+//   afternoon: { label: "下午", start: "14:00", end: "18:00" },
+//   evening: { label: "晚上", start: "19:00", end: "22:00" },
+//   full_day: { label: "全天", start: "00:00", end: "23:59" },
 // };
 
 // const ArrangeCoursePage = () => {
@@ -51,23 +59,26 @@
 //   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 //   const [calendarDates, setCalendarDates] = useState<string[]>([]);
 //   const [dateRangeError, setDateRangeError] = useState<string | null>(null);
+//   const [selectedTimeRange, setSelectedTimeRange] = useState<string | null>(null);
 //   const calendarRef = useRef<FullCalendar>(null);
+//   const router = useRouter();
 
-//   // 表單鉤子
 //   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<CourseDateForm>({
-//     resolver: zodResolver(CreateCourseSchema),
+//     resolver: zodResolver(CourseDateSchema),
 //     defaultValues: {
+//       startDate: "",
+//       endDate: "",
+//       startTime: "",
+//       endTime: "",
 //       weekday: null,
 //       classroom: null,
 //     },
 //   });
 
-//   // 監聽表單中的 start_date、end_date 和 weekday
-//   const startDate = watch("start_date");
-//   const endDate = watch("end_date");
+//   const startDate = watch("startDate");
+//   const endDate = watch("endDate");
 //   const selectedWeekday = watch("weekday");
 
-//   // 定義星期對應（0: 星期日, 1: 星期一, ..., 6: 星期六）
 //   const weekdays = [
 //     { value: "0", label: "星期日" },
 //     { value: "1", label: "星期一" },
@@ -78,7 +89,6 @@
 //     { value: "6", label: "星期六" },
 //   ];
 
-//   // 獲取課程數據
 //   useEffect(() => {
 //     const fetchCourseData = async () => {
 //       try {
@@ -87,83 +97,109 @@
 //           throw new Error(`請求失敗: ${response.status}`);
 //         }
 //         const data = await response.json();
-//         setCourses(data);
-//         if (data.length > 0) {
-//           setSelectedCourse(data[0]);
-//           setCalendarDates(data[0].Coursedates || []);
+//         console.log("API response:", data);
+//         const courseData = Array.isArray(data) ? data : [];
+//         setCourses(courseData);
+//         if (courseData.length > 0) {
+//           console.log("First course CourseTimeRanges:", courseData[0].CourseTimeRanges);
+//           setSelectedCourse(courseData[0]);
+//           setCalendarDates(courseData[0].Coursedates || []);
+//           setSelectedTimeRange(
+//             Array.isArray(courseData[0].CourseTimeRanges) && courseData[0].CourseTimeRanges.length > 0
+//               ? courseData[0].CourseTimeRanges[0].timeRange
+//               : null
+//           );
 //           reset({
-//             start_date: data[0].start_date || "",
-//             end_date: data[0].end_date || "",
-//             start_time: data[0].start_time || "",
-//             end_time: data[0].end_time || "",
-//             classroom: data[0].classroom || "", // 新增課室欄位
+//             startDate: courseData[0].startDate || "",
+//             endDate: courseData[0].endDate || "",
+//             startTime: courseData[0].startTime || "",
+//             endTime: courseData[0].endTime || "",
+//             weekday: courseData[0].weekday || null,
+//             classroom: courseData[0].classroom || "",
+//           });
+//         } else {
+//           setSelectedCourse(null);
+//           setCalendarDates([]);
+//           setSelectedTimeRange(null);
+//           reset({
+//             startDate: "",
+//             endDate: "",
+//             startTime: "",
+//             endTime: "",
+//             weekday: null,
+//             classroom: "",
 //           });
 //         }
 //       } catch (error) {
 //         console.error("Error fetching data:", error);
+//         setCourses([]);
+//         setSelectedCourse(null);
+//         setCalendarDates([]);
+//         setSelectedTimeRange(null);
 //       }
 //     };
 //     fetchCourseData();
 //   }, [reset]);
 
-//   // 當選擇課程時，更新表單和月曆
 //   useEffect(() => {
 //     if (selectedCourse) {
+//       setSelectedTimeRange(
+//         Array.isArray(selectedCourse.CourseTimeRanges) && selectedCourse.CourseTimeRanges.length > 0
+//           ? selectedCourse.CourseTimeRanges[0].timeRange
+//           : null
+//       );
 //       reset({
-//         start_date: selectedCourse.start_date || "",
-//         end_date: selectedCourse.end_date || "",
-//         start_time: selectedCourse.start_time || "",
-//         end_time: selectedCourse.end_time || "",
-//         weekday: null,
-//         classroom: selectedCourse.classroom || "", // 新增課室欄位
+//         startDate: selectedCourse.startDate || "",
+//         endDate: selectedCourse.endDate || "",
+//         startTime: selectedCourse.startTime || "",
+//         endTime: selectedCourse.endTime || "",
+//         weekday: selectedCourse.weekday || null,
+//         classroom: selectedCourse.classroom || "",
 //       });
 //       setCalendarDates(selectedCourse.Coursedates || []);
 //     }
 //   }, [selectedCourse, reset]);
 
-//   // 當 start_date 和 weekday 變化時，自動生成指定星期的日期
 //   useEffect(() => {
-//     if (selectedCourse && startDate && selectedWeekday !== null && typeof startDate === "string") {
+//     if (selectedCourse && startDate && startDate !== "") {
 //       const start = parseISO(startDate);
-//       const targetWeekday = selectedWeekday ? parseInt(selectedWeekday) : NaN;
 //       const newDates: string[] = [];
-//       let currentDate = start;
-//       let count = 0;
 
-//       // 找到第一個符合指定星期的日期
-//       while (getDay(currentDate) !== targetWeekday) {
-//         currentDate = addDays(currentDate, 1);
-//       }
+//       if (selectedWeekday && selectedWeekday !== "") {
+//         const targetWeekday = parseInt(selectedWeekday);
+//         let currentDate = start;
+//         let count = 0;
 
-//       // 生成指定星期的日期，直到滿足 Number_of_days
-//       while (count < selectedCourse.Number_of_days) {
-//         newDates.push(format(currentDate, "yyyy-MM-dd"));
-//         currentDate = addWeeks(currentDate, 1); // 跳到下一個同星期
-//         count++;
+//         while (getDay(currentDate) !== targetWeekday) {
+//           currentDate = addDays(currentDate, 1);
+//         }
+
+//         while (count < selectedCourse.numberOfDays) {
+//           newDates.push(format(currentDate, "yyyy-MM-dd"));
+//           currentDate = addWeeks(currentDate, 1);
+//           count++;
+//         }
+//       } else {
+//         for (let i = 0; i < selectedCourse.numberOfDays; i++) {
+//           const date = addDays(start, i);
+//           newDates.push(format(date, "yyyy-MM-dd"));
+//         }
 //       }
 
 //       setCalendarDates(newDates);
-//     } else if (selectedCourse && startDate && !selectedWeekday) {
-//       // 如果未選擇 weekday，恢復連續日期
-//       const start = parseISO(startDate);
-//       const newDates: string[] = [];
-//       for (let i = 0; i < selectedCourse.Number_of_days; i++) {
-//         const date = addDays(start, i);
-//         newDates.push(format(date, "yyyy-MM-dd"));
-//       }
-//       setCalendarDates(newDates);
+//     } else {
+//       setCalendarDates([]);
 //     }
 //   }, [startDate, selectedWeekday, selectedCourse]);
 
-//   // 當 start_date 或 end_date 變化時，檢查日期範圍是否滿足 Number_of_days
 //   useEffect(() => {
-//     if (selectedCourse && startDate && endDate && typeof startDate === "string" && typeof endDate === "string") {
+//     if (selectedCourse && startDate && startDate !== "" && endDate && endDate !== "") {
 //       const start = parseISO(startDate);
 //       const end = parseISO(endDate);
-//       const daysDifference = differenceInDays(end, start) + 1; // 包含開始和結束日期
-//       if (daysDifference < selectedCourse.Number_of_days) {
+//       const daysDifference = differenceInDays(end, start) + 1;
+//       if (daysDifference < selectedCourse.numberOfDays) {
 //         setDateRangeError(
-//           `日期範圍（${daysDifference} 天）少於課程持續天數（${selectedCourse.Number_of_days} 天）`
+//           `日期範圍（${daysDifference} 天）少於課程持續天數（${selectedCourse.numberOfDays} 天）`
 //         );
 //       } else {
 //         setDateRangeError(null);
@@ -173,11 +209,16 @@
 //     }
 //   }, [startDate, endDate, selectedCourse]);
 
-//   // 提交表單更新課程日期
+//   const handleTimeRangeSelect = (timeRange: string) => {
+//     setSelectedTimeRange(timeRange);
+//     const { start, end } = timeRangeOptions[timeRange as keyof typeof timeRangeOptions];
+//     setValue("startTime", start);
+//     setValue("endTime", end);
+//   };
+
 //   const onSubmit = async (data: CourseDateForm) => {
 //     if (!selectedCourse) return;
 
-//     // 檢查日期範圍是否有效
 //     if (dateRangeError) {
 //       alert(dateRangeError);
 //       return;
@@ -187,7 +228,19 @@
 //       const response = await fetch(`/api/Course/Update_Course/${selectedCourse.id}`, {
 //         method: "PATCH",
 //         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({ ...data, Coursedates: calendarDates }),
+//         body: JSON.stringify({
+//           ...data,
+//           Coursedates: calendarDates,
+//           CourseTimeRanges: selectedTimeRange
+//             ? [
+//                 {
+//                   timeRange: selectedTimeRange,
+//                   starttime: data.startTime,
+//                   endtime: data.endTime,
+//                 },
+//               ]
+//             : [],
+//         }),
 //       });
 //       if (!response.ok) {
 //         throw new Error(`更新失敗: ${response.status}`);
@@ -197,17 +250,18 @@
 //         course.id === updatedCourse.id ? updatedCourse : course
 //       ));
 //       setSelectedCourse(updatedCourse);
+//       alert("課程更新成功");
+//       router.push("/admin/CourseLists");
 //     } catch (error) {
 //       console.error("Error updating course:", error);
+//       alert("更新課程失敗，請稍後重試");
 //     }
 //   };
 
-//   // 處理日期點擊（新增或移除日期）
 //   const handleDateClick = (arg: { dateStr: string }) => {
 //     const clickedDate = arg.dateStr;
 
-//     // 檢查是否在 start_date 和 end_date 範圍內
-//     if (startDate && endDate && typeof startDate === "string" && typeof endDate === "string") {
+//     if (startDate && startDate !== "" && endDate && endDate !== "") {
 //       const start = parseISO(startDate);
 //       const end = parseISO(endDate);
 //       const clicked = parseISO(clickedDate);
@@ -217,40 +271,34 @@
 //       }
 //     }
 
-// // 如果選擇了 weekday，檢查點擊的日期是否為指定星期
-// if (selectedWeekday !== null && selectedWeekday !== undefined && !isNaN(parseInt(selectedWeekday))) {
-//   const clicked = parseISO(clickedDate);
-//   if (getDay(clicked) !== parseInt(selectedWeekday)) {
-//     alert(`只能選擇${weekdays.find(w => w.value === selectedWeekday)?.label}的日期`);
-//     return;
-//   }
-// }
+//     if (selectedWeekday && selectedWeekday !== "") {
+//       const clicked = parseISO(clickedDate);
+//       if (getDay(clicked) !== parseInt(selectedWeekday)) {
+//         alert(`只能選擇${weekdays.find(w => w.value === selectedWeekday)?.label}的日期`);
+//         return;
+//       }
+//     }
 
 //     let updatedDates: string[];
 //     if (calendarDates.includes(clickedDate)) {
-//       // 移除日期
 //       updatedDates = calendarDates.filter((date) => date !== clickedDate);
 //     } else {
-//       // 新增日期
 //       updatedDates = [...calendarDates, clickedDate];
 //     }
 
-//     // 確保日期數量不超過 Number_of_days
-//     if (selectedCourse && updatedDates.length > selectedCourse.Number_of_days) {
-//       alert(`課程日期數量不能超過 ${selectedCourse.Number_of_days} 天`);
+//     if (selectedCourse && updatedDates.length > selectedCourse.numberOfDays) {
+//       alert(`課程日期數量不能超過 ${selectedCourse.numberOfDays} 天`);
 //       return;
 //     }
 
 //     setCalendarDates(updatedDates);
 //   };
 
-//   // 處理拖放事件
-//   const handleEventDrop = (info: any) => {
+//   const handleEventDrop = (info: EventDropArg) => {
 //     const newDate = format(info.event.start!, "yyyy-MM-dd");
 //     const oldDate = info.oldEvent.start ? format(info.oldEvent.start, "yyyy-MM-dd") : null;
 
-//     // 檢查新日期是否在 start_date 和 end_date 範圍內
-//     if (startDate && endDate && typeof startDate === "string" && typeof endDate === "string") {
+//     if (startDate && startDate !== "" && endDate && endDate !== "") {
 //       const start = parseISO(startDate);
 //       const end = parseISO(endDate);
 //       const newDateParsed = parseISO(newDate);
@@ -261,15 +309,14 @@
 //       }
 //     }
 
-// // 如果選擇了 weekday，檢查新日期是否為指定星期
-// if (selectedWeekday !== null && selectedWeekday !== undefined && !isNaN(parseInt(selectedWeekday))) {
-//   const newDateParsed = parseISO(newDate);
-//   if (getDay(newDateParsed) !== parseInt(selectedWeekday)) {
-//     alert(`只能拖放到${weekdays.find(w => w.value === selectedWeekday)?.label}的日期`);
-//     info.revert();
-//     return;
-//   }
-// }
+//     if (selectedWeekday && selectedWeekday !== "") {
+//       const newDateParsed = parseISO(newDate);
+//       if (getDay(newDateParsed) !== parseInt(selectedWeekday)) {
+//         alert(`只能拖放到${weekdays.find(w => w.value === selectedWeekday)?.label}的日期`);
+//         info.revert();
+//         return;
+//       }
+//     }
 
 //     let updatedDates = [...calendarDates];
 //     if (oldDate && calendarDates.includes(oldDate)) {
@@ -279,9 +326,8 @@
 //       updatedDates.push(newDate);
 //     }
 
-//     // 確保日期數量不超過 Number_of_days
-//     if (selectedCourse && updatedDates.length > selectedCourse.Number_of_days) {
-//       alert(`課程日期數量不能超過 ${selectedCourse.Number_of_days} 天`);
+//     if (selectedCourse && updatedDates.length > selectedCourse.numberOfDays) {
+//       alert(`課程日期數量不能超過 ${selectedCourse.numberOfDays} 天`);
 //       info.revert();
 //       return;
 //     }
@@ -289,7 +335,6 @@
 //     setCalendarDates(updatedDates);
 //   };
 
-//   // 將 Coursedates 轉換為 FullCalendar 事件
 //   const calendarEvents = calendarDates.map((date) => ({
 //     title: selectedCourse?.title || "課程",
 //     date,
@@ -299,8 +344,8 @@
 //     textColor: "#ffffff",
 //   }));
 
-//   console.log(" courses :", courses ,"-- End --")
-
+//   console.log("courses:", courses, "-- End --");
+//   console.log("selectedCourse:", selectedCourse);
 
 //   return (
 //     <div className="bg-gray-800 text-white min-h-screen">
@@ -312,28 +357,29 @@
 //           </div>
 //         )}
 //         <div className="flex flex-col md:flex-row gap-6">
-//           {/* 左邊：課程列表和表單 */}
 //           <div className="md:w-1/2 flex flex-col gap-6">
-//             {/* 課程列表 */}
 //             <div className="bg-gray-700 rounded-md p-4 shadow-lg">
 //               <h2 className="text-lg font-semibold mb-4">課程列表</h2>
 //               <div className="space-y-2 max-h-96 overflow-y-auto">
-//                 {courses.map((course) => (
-//                   <div
-//                     key={course.id}
-//                     onClick={() => setSelectedCourse(course)}
-//                     className={`p-3 rounded-md cursor-pointer hover:bg-gray-600 ${
-//                       selectedCourse?.id === course.id ? "bg-gray-600" : ""
-//                     }`}
-//                   >
-//                     <p className="font-medium">{course.title}</p>
-//                     <p className="text-sm text-gray-300">{course.course_code}</p>
-//                   </div>
-//                 ))}
+//                 {Array.isArray(courses) && courses.length > 0 ? (
+//                   courses.map((course) => (
+//                     <div
+//                       key={course.id}
+//                       onClick={() => setSelectedCourse(course)}
+//                       className={`p-3 rounded-md cursor-pointer hover:bg-gray-600 ${
+//                         selectedCourse?.id === course.id ? "bg-gray-600" : ""
+//                       }`}
+//                     >
+//                       <p className="font-medium">{course.title}</p>
+//                       <p className="text-sm text-gray-300">{course.courseCode}</p>
+//                     </div>
+//                   ))
+//                 ) : (
+//                   <p className="text-gray-400">沒有可用的課程</p>
+//                 )}
 //               </div>
 //             </div>
 
-//             {/* 表單 */}
 //             {selectedCourse && (
 //               <div className="bg-gray-700 rounded-md p-4 shadow-lg">
 //                 <h2 className="text-lg font-semibold mb-4">課程詳情</h2>
@@ -342,46 +388,75 @@
 //                     <label className="block text-sm font-medium">開始日期</label>
 //                     <input
 //                       type="date"
-//                       {...register("start_date")}
+//                       {...register("startDate")}
 //                       className="mt-1 block w-full rounded-md bg-gray-800 border-gray-600 text-white p-2"
 //                     />
-//                     {errors.start_date && (
-//                       <p className="text-red-500 text-sm">{errors.start_date.message}</p>
+//                     {errors.startDate && (
+//                       <p className="text-red-500 text-sm">{errors.startDate.message}</p>
 //                     )}
 //                   </div>
 //                   <div>
 //                     <label className="block text-sm font-medium">結束日期</label>
 //                     <input
 //                       type="date"
-//                       {...register("end_date")}
+//                       {...register("endDate")}
 //                       className="mt-1 block w-full rounded-md bg-gray-800 border-gray-600 text-white p-2"
 //                     />
-//                     {errors.end_date && (
-//                       <p className="text-red-500 text-sm">{errors.end_date.message}</p>
+//                     {errors.endDate && (
+//                       <p className="text-red-500 text-sm">{errors.endDate.message}</p>
 //                     )}
 //                   </div>
 //                   <div>
-//                     <label className="block text-sm font-medium">開始時間</label>
-//                     <input
-//                       type="time"
-//                       {...register("start_time")}
-//                       className="mt-1 block w-full rounded-md bg-gray-800 border-gray-600 text-white p-2"
-//                     />
-//                     {errors.start_time && (
-//                       <p className="text-red-500 text-sm">{errors.start_time.message}</p>
-//                     )}
+//                     <label className="block text-sm font-medium">時間段</label>
+//                     <div className="mt-1 flex flex-wrap gap-2">
+//                       {selectedCourse && Array.isArray(selectedCourse.CourseTimeRanges) && selectedCourse.CourseTimeRanges.length > 0 ? (
+//                         selectedCourse.CourseTimeRanges.map((range) => (
+//                           <button
+//                             key={range.id}
+//                             type="button"
+//                             onClick={() => handleTimeRangeSelect(range.timeRange)}
+//                             className={`px-4 py-2 rounded-md ${
+//                               selectedTimeRange === range.timeRange ? "bg-blue-600" : "bg-gray-600 hover:bg-gray-500"
+//                             }`}
+//                           >
+//                             {timeRangeOptions[range.timeRange as keyof typeof timeRangeOptions]?.label || range.timeRange}
+//                           </button>
+//                         ))
+//                       ) : (
+//                         <p className="text-gray-400">無可用時間段</p>
+//                       )}
+//                     </div>
 //                   </div>
-//                   <div>
-//                     <label className="block text-sm font-medium">結束時間</label>
-//                     <input
-//                       type="time"
-//                       {...register("end_time")}
-//                       className="mt-1 block w-full rounded-md bg-gray-800 border-gray-600 text-white p-2"
-//                     />
-//                     {errors.end_time && (
-//                       <p className="text-red-500 text-sm">{errors.end_time.message}</p>
-//                     )}
-//                   </div>
+//                   {selectedTimeRange && (
+//                     <>
+//                       <div>
+//                         <label className="block text-sm font-medium">開始時間</label>
+//                         <input
+//                           type="time"
+//                           {...register("startTime")}
+//                           min={timeRangeOptions[selectedTimeRange as keyof typeof timeRangeOptions].start}
+//                           max={timeRangeOptions[selectedTimeRange as keyof typeof timeRangeOptions].end}
+//                           className="mt-1 block w-full rounded-md bg-gray-800 border-gray-600 text-white p-2"
+//                         />
+//                         {errors.startTime && (
+//                           <p className="text-red-500 text-sm">{errors.startTime.message}</p>
+//                         )}
+//                       </div>
+//                       <div>
+//                         <label className="block text-sm font-medium">結束時間</label>
+//                         <input
+//                           type="time"
+//                           {...register("endTime")}
+//                           min={timeRangeOptions[selectedTimeRange as keyof typeof timeRangeOptions].start}
+//                           max={timeRangeOptions[selectedTimeRange as keyof typeof timeRangeOptions].end}
+//                           className="mt-1 block w-full rounded-md bg-gray-800 border-gray-600 text-white p-2"
+//                         />
+//                         {errors.endTime && (
+//                           <p className="text-red-500 text-sm">{errors.endTime.message}</p>
+//                         )}
+//                       </div>
+//                     </>
+//                   )}
 //                   <div>
 //                     <label className="block text-sm font-medium">週份</label>
 //                     <select
@@ -422,7 +497,6 @@
 //             )}
 //           </div>
 
-//           {/* 右邊：月曆 */}
 //           <div className="md:w-1/2">
 //             <div className="bg-gray-700 rounded-md p-4 shadow-lg">
 //               <h2 className="text-lg font-semibold mb-4">課程月曆</h2>
@@ -445,10 +519,10 @@
 //                 height="auto"
 //                 eventDrop={handleEventDrop}
 //                 validRange={
-//                   startDate && endDate
+//                   startDate && startDate !== "" && endDate && endDate !== ""
 //                     ? {
 //                         start: parseISO(startDate),
-//                         end: addDays(parseISO(endDate), 1), // 包含 end_date
+//                         end: addDays(parseISO(endDate), 1),
 //                       }
 //                     : undefined
 //                 }
@@ -500,7 +574,6 @@
 // export default ArrangeCoursePage;
 
 
-
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -511,14 +584,14 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, parseISO, addDays, differenceInDays, getDay, addWeeks } from "date-fns";
-import { useRouter } from "next/navigation"; // 引入 useRouter
+import { useRouter } from "next/navigation";
+import { EventDropArg } from "@fullcalendar/core";
 
-// 定義表單 schema
 const CourseDateSchema = z.object({
-  start_date: z.string().optional().nullable(),
-  end_date: z.string().optional().nullable(),
-  start_time: z.string().optional().nullable(),
-  end_time: z.string().optional().nullable(),
+  startDate: z.string().optional().nullable(),
+  endDate: z.string().optional().nullable(),
+  startTime: z.string().optional().nullable(),
+  endTime: z.string().optional().nullable(),
   weekday: z.string().optional().nullable(),
   classroom: z.string().optional().nullable(),
 });
@@ -529,25 +602,26 @@ type Course = {
   id: string;
   title: string;
   description: string;
-  course_code: string;
-  school_name: string;
-  Number_of_days: number;
-  time_hours: number;
-  TimeRange: string[];
+  courseCode: string;
+  schoolName: string;
+  numberOfDays: number;
+  timeHours: number;
+  CourseTimeRanges: { id: string; timeRange: string; starttime: string | null; endtime: string | null }[];
   teacher: string[];
-  teacher_id: string;
-  Ispublic: boolean;
+  teacherId: string;
+  isPublic: boolean;
   type: string[];
   courseModulId: string | null;
-  start_date: string | null;
-  end_date: string | null;
-  start_time: string | null;
-  end_time: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  startTime: string | null;
+  endTime: string | null;
   Coursedates: string[];
-  weekday: string | null; // ✅ 新增此行
+  weekday: string | null;
   classroom: string | null;
   createdAt: string;
   updatedAt: string;
+  Producted: boolean; // 新增 Producted 字段
 };
 
 const timeRangeOptions = {
@@ -564,29 +638,24 @@ const ArrangeCoursePage = () => {
   const [dateRangeError, setDateRangeError] = useState<string | null>(null);
   const [selectedTimeRange, setSelectedTimeRange] = useState<string | null>(null);
   const calendarRef = useRef<FullCalendar>(null);
-  const router = useRouter(); // 初始化 router
+  const router = useRouter();
 
-  // 表單鉤子
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<CourseDateForm>({
     resolver: zodResolver(CourseDateSchema),
     defaultValues: {
-      start_date: "",
-      end_date: "",
-      start_time: "",
-      end_time: "",
+      startDate: "",
+      endDate: "",
+      startTime: "",
+      endTime: "",
       weekday: null,
       classroom: null,
     },
   });
 
-  // 監聽表單中的 start_date、end_date 和 weekday
-  const startDate = watch("start_date");
-  const endDate = watch("end_date");
+  const startDate = watch("startDate");
+  const endDate = watch("endDate");
   const selectedWeekday = watch("weekday");
-  // const startTime = watch("start_time");
-  // const endTime = watch("end_time");
 
-  // 定義星期對應
   const weekdays = [
     { value: "0", label: "星期日" },
     { value: "1", label: "星期一" },
@@ -597,7 +666,6 @@ const ArrangeCoursePage = () => {
     { value: "6", label: "星期六" },
   ];
 
-  // 獲取課程數據
   useEffect(() => {
     const fetchCourseData = async () => {
       try {
@@ -606,36 +674,62 @@ const ArrangeCoursePage = () => {
           throw new Error(`請求失敗: ${response.status}`);
         }
         const data = await response.json();
-        setCourses(data);
-        if (data.length > 0) {
-          setSelectedCourse(data[0]);
-          setCalendarDates(data[0].Coursedates || []);
-          setSelectedTimeRange(data[0].TimeRange[0] || null);
+        console.log("API response:", data);
+        const courseData = Array.isArray(data) ? data : [];
+        setCourses(courseData);
+        if (courseData.length > 0) {
+          console.log("First course CourseTimeRanges:", courseData[0].CourseTimeRanges);
+          setSelectedCourse(courseData[0]);
+          setCalendarDates(courseData[0].Coursedates || []);
+          setSelectedTimeRange(
+            Array.isArray(courseData[0].CourseTimeRanges) && courseData[0].CourseTimeRanges.length > 0
+              ? courseData[0].CourseTimeRanges[0].timeRange
+              : null
+          );
           reset({
-            start_date: data[0].start_date || "",
-            end_date: data[0].end_date || "",
-            start_time: data[0].start_time || "",
-            end_time: data[0].end_time || "",
-            weekday: data[0].weekday || null,
-            classroom: data[0].classroom || "",
+            startDate: courseData[0].startDate || "",
+            endDate: courseData[0].endDate || "",
+            startTime: courseData[0].startTime || "",
+            endTime: courseData[0].endTime || "",
+            weekday: courseData[0].weekday || null,
+            classroom: courseData[0].classroom || "",
+          });
+        } else {
+          setSelectedCourse(null);
+          setCalendarDates([]);
+          setSelectedTimeRange(null);
+          reset({
+            startDate: "",
+            endDate: "",
+            startTime: "",
+            endTime: "",
+            weekday: null,
+            classroom: "",
           });
         }
       } catch (error) {
         console.error("Error fetching data:", error);
+        setCourses([]);
+        setSelectedCourse(null);
+        setCalendarDates([]);
+        setSelectedTimeRange(null);
       }
     };
     fetchCourseData();
   }, [reset]);
 
-  // 當選擇課程時，更新表單和月曆
   useEffect(() => {
     if (selectedCourse) {
-      setSelectedTimeRange(selectedCourse.TimeRange[0] || null);
+      setSelectedTimeRange(
+        Array.isArray(selectedCourse.CourseTimeRanges) && selectedCourse.CourseTimeRanges.length > 0
+          ? selectedCourse.CourseTimeRanges[0].timeRange
+          : null
+      );
       reset({
-        start_date: selectedCourse.start_date || "",
-        end_date: selectedCourse.end_date || "",
-        start_time: selectedCourse.start_time || "",
-        end_time: selectedCourse.end_time || "",
+        startDate: selectedCourse.startDate || "",
+        endDate: selectedCourse.endDate || "",
+        startTime: selectedCourse.startTime || "",
+        endTime: selectedCourse.endTime || "",
         weekday: selectedCourse.weekday || null,
         classroom: selectedCourse.classroom || "",
       });
@@ -643,7 +737,6 @@ const ArrangeCoursePage = () => {
     }
   }, [selectedCourse, reset]);
 
-  // 當 start_date 和 weekday 變化時，自動生成指定星期的日期
   useEffect(() => {
     if (selectedCourse && startDate && startDate !== "") {
       const start = parseISO(startDate);
@@ -658,13 +751,13 @@ const ArrangeCoursePage = () => {
           currentDate = addDays(currentDate, 1);
         }
 
-        while (count < selectedCourse.Number_of_days) {
+        while (count < selectedCourse.numberOfDays) {
           newDates.push(format(currentDate, "yyyy-MM-dd"));
           currentDate = addWeeks(currentDate, 1);
           count++;
         }
       } else {
-        for (let i = 0; i < selectedCourse.Number_of_days; i++) {
+        for (let i = 0; i < selectedCourse.numberOfDays; i++) {
           const date = addDays(start, i);
           newDates.push(format(date, "yyyy-MM-dd"));
         }
@@ -676,15 +769,14 @@ const ArrangeCoursePage = () => {
     }
   }, [startDate, selectedWeekday, selectedCourse]);
 
-  // 當 start_date 或 end_date 變化時，檢查日期範圍是否滿足 Number_of_days
   useEffect(() => {
     if (selectedCourse && startDate && startDate !== "" && endDate && endDate !== "") {
       const start = parseISO(startDate);
       const end = parseISO(endDate);
       const daysDifference = differenceInDays(end, start) + 1;
-      if (daysDifference < selectedCourse.Number_of_days) {
+      if (daysDifference < selectedCourse.numberOfDays) {
         setDateRangeError(
-          `日期範圍（${daysDifference} 天）少於課程持續天數（${selectedCourse.Number_of_days} 天）`
+          `日期範圍（${daysDifference} 天）少於課程持續天數（${selectedCourse.numberOfDays} 天）`
         );
       } else {
         setDateRangeError(null);
@@ -694,15 +786,13 @@ const ArrangeCoursePage = () => {
     }
   }, [startDate, endDate, selectedCourse]);
 
-  // 當選擇 TimeRange 時，設置對應的開始和結束時間範圍
   const handleTimeRangeSelect = (timeRange: string) => {
     setSelectedTimeRange(timeRange);
     const { start, end } = timeRangeOptions[timeRange as keyof typeof timeRangeOptions];
-    setValue("start_time", start);
-    setValue("end_time", end);
+    setValue("startTime", start);
+    setValue("endTime", end);
   };
 
-  // 提交表單更新課程
   const onSubmit = async (data: CourseDateForm) => {
     if (!selectedCourse) return;
 
@@ -715,7 +805,19 @@ const ArrangeCoursePage = () => {
       const response = await fetch(`/api/Course/Update_Course/${selectedCourse.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, Coursedates: calendarDates }),
+        body: JSON.stringify({
+          ...data,
+          Coursedates: calendarDates,
+          CourseTimeRanges: selectedTimeRange
+            ? [
+                {
+                  timeRange: selectedTimeRange,
+                  starttime: data.startTime,
+                  endtime: data.endTime,
+                },
+              ]
+            : [],
+        }),
       });
       if (!response.ok) {
         throw new Error(`更新失敗: ${response.status}`);
@@ -726,14 +828,13 @@ const ArrangeCoursePage = () => {
       ));
       setSelectedCourse(updatedCourse);
       alert("課程更新成功");
-      router.push("/admin/CourseLists"); // 成功後跳轉到 /admin/CourseLists
+      router.push("/admin/CourseLists");
     } catch (error) {
       console.error("Error updating course:", error);
       alert("更新課程失敗，請稍後重試");
     }
   };
 
-  // 處理日期點擊（新增或移除日期）
   const handleDateClick = (arg: { dateStr: string }) => {
     const clickedDate = arg.dateStr;
 
@@ -762,16 +863,15 @@ const ArrangeCoursePage = () => {
       updatedDates = [...calendarDates, clickedDate];
     }
 
-    if (selectedCourse && updatedDates.length > selectedCourse.Number_of_days) {
-      alert(`課程日期數量不能超過 ${selectedCourse.Number_of_days} 天`);
+    if (selectedCourse && updatedDates.length > selectedCourse.numberOfDays) {
+      alert(`課程日期數量不能超過 ${selectedCourse.numberOfDays} 天`);
       return;
     }
 
     setCalendarDates(updatedDates);
   };
 
-  // 處理拖放事件
-  const handleEventDrop = (info: any) => {
+  const handleEventDrop = (info: EventDropArg) => {
     const newDate = format(info.event.start!, "yyyy-MM-dd");
     const oldDate = info.oldEvent.start ? format(info.oldEvent.start, "yyyy-MM-dd") : null;
 
@@ -803,8 +903,8 @@ const ArrangeCoursePage = () => {
       updatedDates.push(newDate);
     }
 
-    if (selectedCourse && updatedDates.length > selectedCourse.Number_of_days) {
-      alert(`課程日期數量不能超過 ${selectedCourse.Number_of_days} 天`);
+    if (selectedCourse && updatedDates.length > selectedCourse.numberOfDays) {
+      alert(`課程日期數量不能超過 ${selectedCourse.numberOfDays} 天`);
       info.revert();
       return;
     }
@@ -812,7 +912,6 @@ const ArrangeCoursePage = () => {
     setCalendarDates(updatedDates);
   };
 
-  // 將 Coursedates 轉換為 FullCalendar 事件
   const calendarEvents = calendarDates.map((date) => ({
     title: selectedCourse?.title || "課程",
     date,
@@ -821,6 +920,9 @@ const ArrangeCoursePage = () => {
     borderColor: "#2563eb",
     textColor: "#ffffff",
   }));
+
+  console.log("courses:", courses, "-- End --");
+  console.log("selectedCourse:", selectedCourse);
 
   return (
     <div className="bg-gray-800 text-white min-h-screen">
@@ -836,18 +938,25 @@ const ArrangeCoursePage = () => {
             <div className="bg-gray-700 rounded-md p-4 shadow-lg">
               <h2 className="text-lg font-semibold mb-4">課程列表</h2>
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {courses.map((course) => (
-                  <div
-                    key={course.id}
-                    onClick={() => setSelectedCourse(course)}
-                    className={`p-3 rounded-md cursor-pointer hover:bg-gray-600 ${
-                      selectedCourse?.id === course.id ? "bg-gray-600" : ""
-                    }`}
-                  >
-                    <p className="font-medium">{course.title}</p>
-                    <p className="text-sm text-gray-300">{course.course_code}</p>
-                  </div>
-                ))}
+                {Array.isArray(courses) && courses.length > 0 ? (
+                  courses.map((course) => (
+                    <div
+                      key={course.id}
+                      onClick={() => setSelectedCourse(course)}
+                      className={`p-3 rounded-md cursor-pointer hover:bg-gray-600 ${
+                        selectedCourse?.id === course.id ? "bg-gray-600" : ""
+                      }`}
+                    >
+                      <p className="font-medium">{course.title}</p>
+                      <p className="text-sm text-gray-300">{course.courseCode}</p>
+                      <p className="text-sm text-gray-300">
+                        狀態: {course.Producted ? "已成為產品" : "未成為產品"}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-400">沒有可用的課程</p>
+                )}
               </div>
             </div>
 
@@ -859,41 +968,43 @@ const ArrangeCoursePage = () => {
                     <label className="block text-sm font-medium">開始日期</label>
                     <input
                       type="date"
-                      {...register("start_date")}
+                      {...register("startDate")}
                       className="mt-1 block w-full rounded-md bg-gray-800 border-gray-600 text-white p-2"
                     />
-                    {errors.start_date && (
-                      <p className="text-red-500 text-sm">{errors.start_date.message}</p>
+                    {errors.startDate && (
+                      <p className="text-red-500 text-sm">{errors.startDate.message}</p>
                     )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium">結束日期</label>
                     <input
                       type="date"
-                      {...register("end_date")}
+                      {...register("endDate")}
                       className="mt-1 block w-full rounded-md bg-gray-800 border-gray-600 text-white p-2"
                     />
-                    {errors.end_date && (
-                      <p className="text-red-500 text-sm">{errors.end_date.message}</p>
+                    {errors.endDate && (
+                      <p className="text-red-500 text-sm">{errors.endDate.message}</p>
                     )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium">時間段</label>
                     <div className="mt-1 flex flex-wrap gap-2">
-                      {selectedCourse.TimeRange.map((range) => (
-                        <button
-                          key={range}
-                          type="button"
-                          onClick={() => handleTimeRangeSelect(range)}
-                          className={`px-4 py-2 rounded-md ${
-                            selectedTimeRange === range
-                              ? "bg-blue-600"
-                              : "bg-gray-600 hover:bg-gray-500"
-                          }`}
-                        >
-                          {timeRangeOptions[range as keyof typeof timeRangeOptions].label}
-                        </button>
-                      ))}
+                      {selectedCourse && Array.isArray(selectedCourse.CourseTimeRanges) && selectedCourse.CourseTimeRanges.length > 0 ? (
+                        selectedCourse.CourseTimeRanges.map((range) => (
+                          <button
+                            key={range.id}
+                            type="button"
+                            onClick={() => handleTimeRangeSelect(range.timeRange)}
+                            className={`px-4 py-2 rounded-md ${
+                              selectedTimeRange === range.timeRange ? "bg-blue-600" : "bg-gray-600 hover:bg-gray-500"
+                            }`}
+                          >
+                            {timeRangeOptions[range.timeRange as keyof typeof timeRangeOptions]?.label || range.timeRange}
+                          </button>
+                        ))
+                      ) : (
+                        <p className="text-gray-400">無可用時間段</p>
+                      )}
                     </div>
                   </div>
                   {selectedTimeRange && (
@@ -902,26 +1013,26 @@ const ArrangeCoursePage = () => {
                         <label className="block text-sm font-medium">開始時間</label>
                         <input
                           type="time"
-                          {...register("start_time")}
+                          {...register("startTime")}
                           min={timeRangeOptions[selectedTimeRange as keyof typeof timeRangeOptions].start}
                           max={timeRangeOptions[selectedTimeRange as keyof typeof timeRangeOptions].end}
                           className="mt-1 block w-full rounded-md bg-gray-800 border-gray-600 text-white p-2"
                         />
-                        {errors.start_time && (
-                          <p className="text-red-500 text-sm">{errors.start_time.message}</p>
+                        {errors.startTime && (
+                          <p className="text-red-500 text-sm">{errors.startTime.message}</p>
                         )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium">結束時間</label>
                         <input
                           type="time"
-                          {...register("end_time")}
+                          {...register("endTime")}
                           min={timeRangeOptions[selectedTimeRange as keyof typeof timeRangeOptions].start}
                           max={timeRangeOptions[selectedTimeRange as keyof typeof timeRangeOptions].end}
                           className="mt-1 block w-full rounded-md bg-gray-800 border-gray-600 text-white p-2"
                         />
-                        {errors.end_time && (
-                          <p className="text-red-500 text-sm">{errors.end_time.message}</p>
+                        {errors.endTime && (
+                          <p className="text-red-500 text-sm">{errors.endTime.message}</p>
                         )}
                       </div>
                     </>

@@ -1,116 +1,398 @@
+// 'use server';
+
+// import { auth } from '@/auth';
+// import { db } from '@/lib/db';
+// import type { Cart, CartItem} from '@prisma/client';
+
+// type CartWithItems = Cart & {
+//   items: (CartItem & { product: { id: string; title: string; price: number } })[];
+// };
+
+// // type OrderWithItems = Order & {
+// //   items: { productId: string; quantity: number; price: number }[];
+// // };
+
+// export async function addToCart(productId: string, quantity: number): Promise<{ success: true }> {
+//   const session = await auth();
+//   if (!session?.user?.id) throw new Error('未授權');
+
+//   // 驗證產品是否存在
+//   const productExists = await db.product.findUnique({
+//     where: { id: productId },
+//     select: { id: true },
+//   });
+
+//   if (!productExists) throw new Error('產品不存在');
+
+//   let cart: CartWithItems | null = await db.cart.findFirst({
+//     where: { userId: session.user.id },
+//     include: { items: { include: { product: true } } },
+//   });
+
+//   if (!cart) {
+//     cart = await db.cart.create({
+//       data: { userId: session.user.id },
+//       include: { items: { include: { product: true } } },
+//     });
+//   }
+
+//   const existingItem = await db.cartItem.findFirst({
+//     where: { cartId: cart.id, productId },
+//   });
+
+//   try {
+//     if (existingItem) {
+//       await db.cartItem.update({
+//         where: { id: existingItem.id },
+//         data: { quantity: existingItem.quantity + quantity },
+//       });
+//     } else {
+//       await db.cartItem.create({
+//         data: {
+//           cartId: cart.id,
+//           productId,
+//           quantity,
+//         },
+//       });
+//     }
+//     return { success: true };
+//   } catch (error) {
+//     console.error('添加至購物車失敗:', error);
+//     throw new Error('無法添加至購物車');
+//   }
+// }
+
+// export async function removeFromCart(cartItemId: string): Promise<{ success: true }> {
+//   const session = await auth();
+//   if (!session?.user?.id) throw new Error('未授權');
+
+//   try {
+//     await db.cartItem.delete({
+//       where: { id: cartItemId },
+//     });
+//     return { success: true };
+//   } catch (error) {
+//     console.error('從購物車移除失敗:', error);
+//     throw new Error('無法從購物車移除');
+//   }
+// }
+
+// export async function createOrder(): Promise<{ orderId: string; total: number }> {
+//   const session = await auth();
+//   if (!session?.user?.id) throw new Error('未授權');
+
+//   const cart = await db.cart.findFirst({
+//     where: { userId: session.user.id },
+//     include: { items: { include: { product: true } } },
+//   });
+
+//   if (!cart || cart.items.length === 0) throw new Error('購物車為空');
+
+//   const total = cart.items.reduce(
+//     (sum, item) => {
+//       if (!item.product) throw new Error(`產品 ${item.productId} 不存在`);
+//       return sum + item.quantity * item.product.price;
+//     },
+//     0
+//   );
+
+//   try {
+//     const order = await db.order.create({
+//       data: {
+//         userId: session.user.id,
+//         total,
+//         items: {
+//           create: cart.items.map((item) => ({
+//             productId: item.productId,
+//             quantity: item.quantity,
+//             price: item.product.price,
+//           })),
+//         },
+//       },
+//     });
+
+//     await db.cartItem.deleteMany({ where: { cartId: cart.id } });
+
+//     return { orderId: order.id, total };
+//   } catch (error) {
+//     console.error('創建訂單失敗:', error);
+//     throw new Error('無法創建訂單');
+//   }
+// }
+
+// export async function getCart(): Promise<CartWithItems | null> {
+//   const session = await auth();
+//   if (!session?.user?.id) return null;
+
+//   try {
+//     return await db.cart.findFirst({
+//       where: { userId: session.user.id },
+//       include: { items: { include: { product: true } } },
+//     });
+//   } catch (error) {
+//     console.error('獲取購物車失敗:', error);
+//     throw new Error('無法獲取購物車');
+//   }
+// }
+
+
 // app/actions/cart/shop-cart.ts
-'use server'
+'use server';
 
-import { auth } from '@/auth'
-import { db } from '@/lib/db'
-import { Cart, CartItem, Product } from '@prisma/client'
+import { auth } from '@/auth';
+import { db } from '@/lib/db';
 
-interface ProductDetail {
-  id: string
-  title: string
-  description: string
-  price: number
-  createdAt?: string
-  updatedAt?: string
+// 定義與 Prisma Product 模型匹配的類型
+interface Product {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  real_price: number;
+  CourseProductTypeArray: string[];
+  CourseProductStatusArray: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  IsPublic: boolean;
+  courseId: string | null;
 }
 
-// 定義 Cart 類型，包含 items
-type CartWithItems = Cart & {
-  items: CartItem[]
+interface CartItem {
+  id: string;
+  cartId: string;
+  productId: string;
+  quantity: number;
+  createdAt: Date;
+  updatedAt: Date;
+  product: Product;
 }
 
-export async function addToCart(productId: string, quantity: number, getProduct: ProductDetail) {
-  const session = await auth()
-  if (!session?.user?.id) throw new Error('未授權')
+export interface CartWithItems {
+  id: string;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  items: CartItem[];
+}
 
-  // 查詢現有購物車，確保包含 items
-  let cart: CartWithItems | null = await db.cart.findFirst({
+export async function addToCart(productId: string, quantity: number): Promise<{ success: true }> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('未授權');
+
+  // 驗證產品是否存在
+  const productExists = await db.product.findUnique({
+    where: { id: productId },
+    select: { id: true },
+  });
+
+  if (!productExists) throw new Error('產品不存在');
+
+  let cart = await db.cart.findFirst({
     where: { userId: session.user.id },
-    include: { items: true },
-  })
+    include: {
+      items: {
+        include: {
+          product: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              price: true,
+              real_price: true,
+              CourseProductTypeArray: true,
+              CourseProductStatusArray: true,
+              createdAt: true,
+              updatedAt: true,
+              IsPublic: true,
+              courseId: true,
+            },
+          },
+        },
+      },
+    },
+  });
 
   if (!cart) {
-    // 創建新購物車，初始化空的 items 陣列
     cart = await db.cart.create({
       data: { userId: session.user.id },
-      include: { items: true }, // 確保返回的 cart 包含 items
-    })
+      include: {
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                price: true,
+                real_price: true,
+                CourseProductTypeArray: true,
+                CourseProductStatusArray: true,
+                createdAt: true,
+                updatedAt: true,
+                IsPublic: true,
+                courseId: true,
+              },
+            },
+          },
+        },
+      },
+    });
   }
 
   const existingItem = await db.cartItem.findFirst({
     where: { cartId: cart.id, productId },
-  })
+  });
 
-  if (existingItem) {
-    await db.cartItem.update({
-      where: { id: existingItem.id },
-      data: { quantity: existingItem.quantity + quantity },
-    })
-  } else {
-    await db.cartItem.create({
-      data: {
-        cartId: cart.id,
-        productId,
-        quantity,
-      },
-    })
+  try {
+    if (existingItem) {
+      await db.cartItem.update({
+        where: { id: existingItem.id },
+        data: { quantity: existingItem.quantity + quantity },
+      });
+    } else {
+      await db.cartItem.create({
+        data: {
+          cartId: cart.id,
+          productId,
+          quantity,
+        },
+      });
+    }
+    return { success: true };
+  } catch (error) {
+    console.error('添加至購物車失敗:', error);
+    throw new Error('無法添加至購物車');
   }
-
-  return { success: true }
 }
 
-export async function removeFromCart(cartItemId: string) {
-  const session = await auth()
-  if (!session?.user?.id) throw new Error('未授權')
+export async function removeFromCart(cartItemId: string): Promise<{ success: true }> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('未授權');
 
-  await db.cartItem.delete({
-    where: { id: cartItemId },
-  })
+  try {
+    const cartItem = await db.cartItem.findUnique({
+      where: { id: cartItemId },
+      select: { cartId: true },
+    });
 
-  return { success: true }
+    if (!cartItem) throw new Error('未找到指定的購物車項目');
+
+    // 檢查用戶是否有權刪除該項目
+    const cart = await db.cart.findUnique({
+      where: { id: cartItem.cartId },
+      select: { userId: true },
+    });
+
+    if (!cart || cart.userId !== session.user.id) {
+      throw new Error('無權刪除此購物車項目');
+    }
+
+    await db.cartItem.delete({
+      where: { id: cartItemId },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('從購物車移除失敗:', error);
+    throw new Error('無法從購物車移除');
+  }
 }
 
-export async function createOrder() {
-  const session = await auth()
-  if (!session?.user?.id) throw new Error('未授權')
+export async function createOrder(): Promise<{ orderId: string; total: number }> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('未授權');
 
   const cart = await db.cart.findFirst({
     where: { userId: session.user.id },
-    include: { items: { include: { product: true } } },
-  })
-
-  if (!cart || cart.items.length === 0) throw new Error('購物車為空')
-
-  const total = cart.items.reduce(
-    (sum, item) => sum + item.quantity * item.product.price,
-    0
-  )
-
-  const order = await db.order.create({
-    data: {
-      userId: session.user.id,
-      total,
+    include: {
       items: {
-        create: cart.items.map(item => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          price: item.product.price,
-        })),
+        include: {
+          product: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              price: true,
+              real_price: true,
+              CourseProductTypeArray: true,
+              CourseProductStatusArray: true,
+              createdAt: true,
+              updatedAt: true,
+              IsPublic: true,
+              courseId: true,
+            },
+          },
+        },
       },
     },
-  })
+  });
 
-  await db.cartItem.deleteMany({ where: { cartId: cart.id } })
+  if (!cart || cart.items.length === 0) throw new Error('購物車為空');
 
-  return { orderId: order.id, total }
+  const total = cart.items.reduce(
+    (sum, item) => {
+      if (!item.product) throw new Error(`產品 ${item.productId} 不存在`);
+      return sum + item.quantity * item.product.price;
+    },
+    0
+  );
+
+  try {
+    const order = await db.order.create({
+      data: {
+        userId: session.user.id,
+        total,
+        items: {
+          create: cart.items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            price: item.product.price,
+          })),
+        },
+      },
+    });
+
+    await db.cartItem.deleteMany({ where: { cartId: cart.id } });
+
+    return { orderId: order.id, total };
+  } catch (error) {
+    console.error('創建訂單失敗:', error);
+    throw new Error('無法創建訂單');
+  }
 }
 
-export async function getCart() {
-  const session = await auth()
-  if (!session?.user?.id) return null
+export async function getCart(): Promise<CartWithItems | null> {
+  const session = await auth();
+  if (!session?.user?.id) return null;
 
-  return db.cart.findFirst({
-    where: { userId: session.user.id },
-    include: { items: { include: { product: true } } },
-  })
+  try {
+    const cart = await db.cart.findFirst({
+      where: { userId: session.user.id },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                price: true,
+                real_price: true,
+                CourseProductTypeArray: true,
+                CourseProductStatusArray: true,
+                createdAt: true,
+                updatedAt: true,
+                IsPublic: true,
+                courseId: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    return cart;
+  } catch (error) {
+    console.error('獲取購物車失敗:', error);
+    throw new Error('無法獲取購物車');
+  }
 }

@@ -16,6 +16,8 @@ const ERBListsPage = () => {
     fetchNITTPDataLists();
     }, []);
 
+    console.log("GetERBDataLists : ", GetERBDataLists , "-- End --")
+
   return (
     <div>
       <Link href={"/admin/DataLists/ERBLists/CreateERB"}>

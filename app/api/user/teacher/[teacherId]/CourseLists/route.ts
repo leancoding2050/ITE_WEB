@@ -20,7 +20,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ teacherI
     // 查詢該老師創建的所有課程
     const courses = await db.course.findMany({
       where: {
-        teacher_id: teacherId,
+        teacherId: teacherId,
       },
       include: {
         CourseModul: true, // 可選：包含相關的 CourseModul 資料
