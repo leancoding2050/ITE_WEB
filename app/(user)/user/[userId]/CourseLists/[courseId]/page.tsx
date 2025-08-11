@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams} from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -33,7 +33,6 @@ interface CourseData {
 
 const CourseDataById = () => {
   const params = useParams();
-  const router = useRouter();
   const userId = params.userId as string;
   const courseId = params.courseId as string;
   const [courseData, setCourseData] = useState<CourseData | null>(null);

@@ -13,7 +13,7 @@ const handler = async (data: InputType) : Promise<ReturnType> => {
     let Certigificate_data;
 
     try {
-        Certigificate_data = await db.coursePorductStatue.create({
+        Certigificate_data = await db.courseProductStatus.create({
             data: {
                 statuename:statuename
             }

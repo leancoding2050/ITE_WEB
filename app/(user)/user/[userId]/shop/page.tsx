@@ -27,7 +27,7 @@ interface CourseProductStatus {
 }
 
 const ShopPage = () => {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const params = useParams();
   const userId = params.userId as string;
   const router = useRouter();

@@ -26,6 +26,33 @@ const CourseDateSchema = z.object({
 
 type CourseDateForm = z.infer<typeof CourseDateSchema>;
 
+// type Course = {
+//   id: string;
+//   title: string;
+//   description: string;
+//   courseCode: string;
+//   schoolName: string;
+//   numberOfDays: number;
+//   timeHours: number;
+//   CourseTimeRanges: { id: string; timeRange: TimeRange; starttime: string | null; endtime: string | null }[];
+//   teacher: string[];
+//   teacherId: string;
+//   isPublic: boolean;
+//   type: string[];
+//   courseModulId: string | null;
+//   startDate?: string | null;  // 允許可選和 null
+//   endDate?: string | null;
+//   startTime?: string | null;
+//   endTime?: string | null;
+//   Coursedates?: string[];     // 允許可選
+//   weekday?: string | null;
+//   classroom?: string | null;
+//   createdAt: string;
+//   updatedAt: string;
+//   Producted: boolean;
+// };
+
+
 type Course = {
   id: string;
   title: string;
@@ -34,23 +61,35 @@ type Course = {
   schoolName: string;
   numberOfDays: number;
   timeHours: number;
-  CourseTimeRanges: { id: string; timeRange: TimeRange; starttime: string | null; endtime: string | null }[];
+  CourseTimeRanges: { 
+    id: string; 
+    courseId: string; 
+    timeRange: TimeRange; 
+    starttime: string | null; 
+    endtime: string | null;
+    createdAt: Date;  // 改為 Date 類型
+    updatedAt: Date;  // 改為 Date 類型
+  }[];
   teacher: string[];
   teacherId: string;
   isPublic: boolean;
   type: string[];
   courseModulId: string | null;
-  startDate: string | null;
-  endDate: string | null;
-  startTime: string | null;
-  endTime: string | null;
-  Coursedates: string[];
-  weekday: string | null;
-  classroom: string | null;
-  createdAt: string;
-  updatedAt: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  Coursedates?: string[];
+  weekday?: string | null;
+  classroom?: string | null;
+  createdAt: Date;    // 改為 Date 類型
+  updatedAt: Date;    // 改為 Date 類型
   Producted: boolean;
+  isProduct?: boolean;       // 添加後端返回的字段
+  Students?: string[];       // 添加後端返回的字段
+  CourseTypes?: string | null; // 添加後端返回的字段
 };
+
 
 const timeRangeOptions: Record<TimeRange, { label: string; start: string; end: string }> = {
   morning: { label: '上午', start: '09:00', end: '13:00' },
@@ -221,50 +260,108 @@ const Edit_Course_Form_Calendar = () => {
     setValue('endTime', end);
   };
 
-  const onSubmit = async (data: CourseDateForm) => {
-    if (!selectedCourse) {
-      setError('請選擇一個課程');
+  // const onSubmit = async (data: CourseDateForm) => {
+
+  //   if (!selectedCourse) {
+  //     setError('請選擇一個課程');
+  //     return;
+  //   }
+
+  //   if (dateRangeError) {
+  //     setError(dateRangeError);
+  //     return;
+  //   }
+
+  //   try {
+  //     const result = await updateCourseDates({
+        
+
+  //       courseId: selectedCourse.id,
+  //       ...data,
+  //       Coursedates: calendarDates,
+  //       CourseTimeRanges: selectedTimeRange
+  //         ? [
+  //             {
+  //               timeRange: selectedTimeRange,
+  //               starttime: data.startTime,
+  //               endtime: data.endTime,
+  //             },
+  //           ]
+  //         : [],
+  //     });
+
+  //     if (!result.success) {
+  //       setError(result.error || '更新課程失敗');
+  //       return;
+  //     }
+
+  //     // 更新本地課程數據
+  //     setCourses(courses.map((course) =>
+  //       course.id === result.course.id ? result.course : course
+  //     ));
+  //     setSelectedCourse(result.course);
+  //     alert('課程更新成功');
+  //     router.push('/admin/CourseLists');
+  //   } catch (error) {
+  //     console.error('Error updating course:', error);
+  //     setError('更新課程失敗，請稍後重試');
+  //   }
+  // };
+
+// 在 onSubmit 函數中
+const onSubmit = async (data: CourseDateForm) => {
+  if (!selectedCourse) {
+    setError('請選擇一個課程');
+    return;
+  }
+
+  if (dateRangeError) {
+    setError(dateRangeError);
+    return;
+  }
+
+  try {
+    const result = await updateCourseDates({
+      courseId: selectedCourse.id,
+      ...data,
+      Coursedates: calendarDates,
+      CourseTimeRanges: selectedTimeRange
+        ? [
+            {
+              timeRange: selectedTimeRange,
+              starttime: data.startTime,
+              endtime: data.endTime,
+            },
+          ]
+        : [],
+    });
+
+    if (!result.success) {
+      setError(result.error || '更新課程失敗');
       return;
     }
 
-    if (dateRangeError) {
-      setError(dateRangeError);
-      return;
+    if (!result.course) {
+      throw new Error('更新成功但未返回課程數據');
     }
 
-    try {
-      const result = await updateCourseDates({
-        courseId: selectedCourse.id,
-        ...data,
-        Coursedates: calendarDates,
-        CourseTimeRanges: selectedTimeRange
-          ? [
-              {
-                timeRange: selectedTimeRange,
-                starttime: data.startTime,
-                endtime: data.endTime,
-              },
-            ]
-          : [],
-      });
+    // 使用雙重斷言解決類型問題
+    const updatedCourse = result.course as unknown as Course;
+    
+    // 更新本地課程數據
+    setCourses(courses.map((course) =>
+      course.id === updatedCourse.id ? updatedCourse : course
+    ));
+    
+    setSelectedCourse(updatedCourse);
+    alert('課程更新成功');
+    router.push('/admin/CourseLists');
+  } catch (error) {
+    console.error('Error updating course:', error);
+    setError('更新課程失敗，請稍後重試');
+  }
+};
 
-      if (!result.success) {
-        setError(result.error || '更新課程失敗');
-        return;
-      }
-
-      // 更新本地課程數據
-      setCourses(courses.map((course) =>
-        course.id === result.course.id ? result.course : course
-      ));
-      setSelectedCourse(result.course);
-      alert('課程更新成功');
-      router.push('/admin/CourseLists');
-    } catch (error) {
-      console.error('Error updating course:', error);
-      setError('更新課程失敗，請稍後重試');
-    }
-  };
 
   const handleDateClick = (arg: { dateStr: string }) => {
     const clickedDate = arg.dateStr;

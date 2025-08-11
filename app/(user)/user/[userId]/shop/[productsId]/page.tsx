@@ -77,21 +77,27 @@
 // }
 
 
-// app/(user)/user/[userId]/shop/[productsId]/page.tsx
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { addToCart } from '@/app/actions/cart/shop-cart';
+import { format } from 'date-fns';
 
 interface ProductDetail {
   id: string;
   title: string;
   description: string;
   price: number;
-  real_price:number;
+  real_price: number;
   createdAt?: string;
   updatedAt?: string;
+  Course?: {
+    startDate?: string | null;
+    endDate?: string | null;
+    Coursedates: string[];
+    timeHours: number;
+  };
 }
 
 export default function ProductPage() {
@@ -125,7 +131,7 @@ export default function ProductPage() {
   const handleAddToCart = async () => {
     startTransition(async () => {
       try {
-        await addToCart(productId, quantity); // 只傳遞 productId 和 quantity
+        await addToCart(productId, quantity);
         router.push(`/user/${userId}/cart`);
       } catch (error) {
         console.error('加入購物車失敗:', error);
@@ -140,6 +146,16 @@ export default function ProductPage() {
     return <div>{error ?? '載入中...'}</div>;
   }
 
+  // 格式化日期
+  const formatDate = (dateStr?: string | null) => {
+    if (!dateStr) return '未設置';
+    try {
+      return format(new Date(dateStr), 'yyyy-MM-dd');
+    } catch {
+      return '無效日期';
+    }
+  };
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">商品詳情</h1>
@@ -148,24 +164,48 @@ export default function ProductPage() {
         <h2 className="text-xl font-semibold">{getProduct.title}</h2>
         <p className="text-gray-600">{getProduct.description}</p>
         <p className="text-lg font-bold">價格: ${(getProduct.real_price / 100).toFixed(2)}</p>
+        {getProduct.Course && (
+          <div className="mt-4">
+            <p className="text-gray-700">
+              <span className="font-semibold">課程開始日期：</span>
+              {formatDate(getProduct.Course.startDate)}
+            </p>
+            <p className="text-gray-700">
+              <span className="font-semibold">課程結束日期：</span>
+              {formatDate(getProduct.Course.endDate)}
+            </p>
+            <p className="text-gray-700">
+              <span className="font-semibold">課程日期：</span>
+              {getProduct.Course.Coursedates.length > 0
+                ? getProduct.Course.Coursedates.map(formatDate).join(', ')
+                : '無具體日期'}
+            </p>
+            <p className="text-gray-700">
+              <span className="font-semibold">課程總時數：</span>
+              {getProduct.Course.timeHours} 小時
+            </p>
+          </div>
+        )}
       </div>
-      <input
-        type="number"
-        value={quantity}
-        onChange={(e) => setQuantity(Number(e.target.value))}
-        min="1"
-        className="border p-2 mr-2"
-        disabled={isPending}
-      />
-      <button
-        onClick={handleAddToCart}
-        className={`bg-blue-500 text-white px-4 py-2 rounded ${
-          isPending ? 'opacity-50 cursor-not-allowed' : ''
-        }`}
-        disabled={isPending}
-      >
-        {isPending ? '加入中...' : '加入購物車'}
-      </button>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          value={quantity}
+          onChange={(e) => setQuantity(Number(e.target.value))}
+          min="1"
+          className="border p-2 w-20"
+          disabled={isPending}
+        />
+        <button
+          onClick={handleAddToCart}
+          className={`bg-blue-500 text-white px-4 py-2 rounded ${
+            isPending ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+          disabled={isPending}
+        >
+          {isPending ? '加入中...' : '加入購物車'}
+        </button>
+      </div>
     </div>
   );
 }

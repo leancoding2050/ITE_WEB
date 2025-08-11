@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -62,8 +61,6 @@ interface Course {
 }
 
 const CourseListsPage = () => {
-  const params = useParams();
-  const teacherId = params.teacherId as string;
   const [getCourseLists, setGetCourseLists] = useState<Course[]>([]);
   const [getTeacherData, setGetTeacherData] = useState<User[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -103,17 +100,18 @@ const CourseListsPage = () => {
   }, []);
 
   // 搜尋和過濾課程
-  const filteredCourses = getCourseLists.filter((course) =>
-    (course.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (course.teacher || []).some((teacher) => (teacher || "").toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (course.schoolName || "").toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredCourses = getCourseLists.filter(
+    (course) =>
+      course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      course.teacher.some((teacher) => teacher.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      course.schoolName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // 分頁邏輯
-  const totalCourses = filteredCourses.flatMap((course) => course.Coursedates.map((_, index) => ({ course, index }))).length;
+  const totalCourses = filteredCourses.flatMap((course) => course.Coursedates).length;
   const totalPages = Math.ceil(totalCourses / coursesPerPage);
   const paginatedCourses = filteredCourses
-    .flatMap((course) => course.Coursedates.map((date, index) => ({ course, date, index })))
+    .flatMap((course) => course.Coursedates.map((date) => ({ course, date })))
     .slice((currentPage - 1) * coursesPerPage, currentPage * coursesPerPage);
 
   // 日曆事件
@@ -121,21 +119,23 @@ const CourseListsPage = () => {
     ...getCourseLists.flatMap((course) =>
       course.Coursedates.map((date) => ({
         title: `${course.title} - ${course.teacher.join(", ")} - ${course.classroom || "無教室"} - ${course.schoolName}`,
-        date: date,
+        date,
         allDay: true,
         backgroundColor: "#2563eb",
         borderColor: "#2563eb",
       }))
     ),
-    ...getTeacherData.filter((user) => user.role === "TEACHER").flatMap((user) =>
-      user.teacherholidaysDateTime.map((date) => ({
-        title: `${user.name || user.username} 放假`,
-        date: date,
-        allDay: true,
-        backgroundColor: "#dc2626",
-        borderColor: "#dc2626",
-      }))
-    ),
+    ...getTeacherData
+      .filter((user) => user.role === "TEACHER")
+      .flatMap((user) =>
+        user.teacherholidaysDateTime.map((date) => ({
+          title: `${user.name || user.username} 放假`,
+          date,
+          allDay: true,
+          backgroundColor: "#dc2626",
+          borderColor: "#dc2626",
+        }))
+      ),
   ];
 
   return (
@@ -171,12 +171,12 @@ const CourseListsPage = () => {
             <p className="p-4 text-gray-400">無課程數據或正在加載...</p>
           ) : (
             <div className="divide-y divide-gray-700">
-              {paginatedCourses.map(({ course, date, index }) => (
-                // <Link
-                //   key={`${course.id}-${index}`}
-                //   href={`/admin/CourseLists/${course.id}/Edit`}
-                //   className="block px-4 py-3 hover:bg-gray-700 transition"
-                // ></Link>
+              {paginatedCourses.map(({ course, date }) => (
+                <Link
+                  key={`${course.id}-${date}`}
+                  href={`/admin/CourseLists/${course.id}/Edit`}
+                  className="block px-4 py-3 hover:bg-gray-700 transition"
+                >
                   <div className="flex items-center justify-between">
                     <span className="text-base font-medium">
                       {date} - {course.title}
@@ -185,7 +185,7 @@ const CourseListsPage = () => {
                       {course.teacher.join(", ")} - {course.classroom || "無教室"} - {course.schoolName}
                     </span>
                   </div>
-                
+                </Link>
               ))}
             </div>
           )}
@@ -212,15 +212,16 @@ const CourseListsPage = () => {
             </button>
           </div>
         )}
-            <div className="flex justify-center mt-4"> 
-              <Link
-              href={`/admin/CourseLists/edit`}
-              className="block px-4 py-3 hover:bg-gray-700 transition"
-              >
-              在這改課程
-              </Link>
-            
-            </div>
+
+        <div className="flex justify-center mt-4">
+          <Link
+            href="/admin/CourseLists/edit"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition"
+          >
+            在這改課程
+          </Link>
+        </div>
+
         <div className="bg-gray-800 shadow-lg rounded-lg p-4">
           <FullCalendar
             plugins={[dayGridPlugin]}
@@ -249,7 +250,6 @@ const CourseListsPage = () => {
 };
 
 export default CourseListsPage;
-
 // "use client";
 
 // import Link from "next/link";

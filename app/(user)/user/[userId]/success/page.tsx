@@ -4,9 +4,14 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { deleteCart } from '@/app/actions/cart/delete-cart';
 
+// 定義 /api/handle-payment-success 的錯誤響應結構
+interface PaymentSuccessErrorResponse {
+  error: string;
+  details?: string;
+}
 
 export default function SuccessPage() {
   const params = useParams();
@@ -32,6 +37,7 @@ export default function SuccessPage() {
       }
 
       const sessionId = searchParams.get('session_id');
+      console.log('sessionId:', sessionId);
       if (!sessionId) {
         setError('無效的支付會話');
         setLoading(false);
@@ -61,10 +67,19 @@ export default function SuccessPage() {
         }
 
         setLoading(false);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('處理支付或刪除購物車失敗:', err);
-        const errorMessage =
-          err.response?.data?.error || err.message || '無法處理支付或刪除購物車，請聯繫支持';
+        let errorMessage = '無法處理支付或刪除購物車，請聯繫支持';
+
+        if (err instanceof AxiosError && err.response) {
+          // AxiosError
+          const responseData = err.response.data as PaymentSuccessErrorResponse;
+          errorMessage = responseData.error || err.message || errorMessage;
+        } else if (err instanceof Error) {
+          // 其他 Error（包括 deleteCart 拋出的錯誤）
+          errorMessage = err.message || errorMessage;
+        }
+
         setError(errorMessage);
         setLoading(false);
       }

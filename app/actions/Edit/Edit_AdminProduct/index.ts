@@ -39,8 +39,8 @@ const handler = async (data: InputType): Promise<ReturnType> => {
         price: validatedData.price,
         real_price: validatedData.real_price,
         IsPublic: validatedData.IsPublic,
-        CoursePorductTypeArray: validatedData.CoursePorductTypeArray,
-        CoursePorductStatueArray: validatedData.CoursePorductStatueArray,
+        CourseProductTypeArray: validatedData.CoursePorductTypeArray,
+        CourseProductStatusArray: validatedData.CoursePorductStatueArray,
         updatedAt: new Date(),
       },
     });
@@ -55,8 +55,8 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       price: updatedProduct.price,
       real_price: updatedProduct.real_price,
       IsPublic: updatedProduct.IsPublic,
-      CoursePorductTypeArray: updatedProduct.CoursePorductTypeArray,
-      CoursePorductStatueArray: updatedProduct.CoursePorductStatueArray,
+      CoursePorductTypeArray: updatedProduct.CourseProductTypeArray,
+      CoursePorductStatueArray: updatedProduct.CourseProductStatusArray,
     };
 
     return {

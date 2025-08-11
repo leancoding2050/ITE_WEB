@@ -111,15 +111,12 @@
 //   }
 // }
 
-
-
-
 "use server";
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth"; // 使用 NextAuth v5 的 auth 方法
-import { UserRole } from "@prisma/client"; 
+import { auth } from "@/auth";
+import { UserRole } from "@prisma/client";
 
 interface CourseWithDetails {
   id: string;
@@ -138,7 +135,6 @@ interface ErrorResponse {
   statusCode?: number;
 }
 
-// 与 auth.ts 中一致的 Session 类型
 interface CustomSession {
   user: {
     id: string;
@@ -149,14 +145,23 @@ interface CustomSession {
   };
 }
 
-export async function GET(req: NextRequest): Promise<NextResponse<CourseWithDetails[] | ErrorResponse>> {
+export async function GET(
+  req: NextRequest,
+  { params }: { params:  Promise<{ id: string } >} // 关键修改
+): Promise<NextResponse<CourseWithDetails[] | ErrorResponse>> {
   try {
-    // 使用 NextAuth v5 的 auth() 方法获取 session
+    // 直接从 params 获取 userId
+    const {id:userId} =await params; // 关键修改
+    if (!userId) {
+      return NextResponse.json(
+        { error: "缺少用戶 ID", statusCode: 400 },
+        { status: 400 }
+      );
+    }
+
     const sessionData = await auth();
-    
-    // 处理 session 数据为 CustomSession 类型
     const session = sessionData as unknown as CustomSession | null;
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "未授權：請先登入" },
@@ -164,21 +169,32 @@ export async function GET(req: NextRequest): Promise<NextResponse<CourseWithDeta
       );
     }
 
-    const userId = session.user.id;
+    if (session.user.role !== UserRole.ADMIN && session.user.id !== userId) {
+      return NextResponse.json(
+        { error: "無權操作：您無權查看其他用戶的課程" },
+        { status: 403 }
+      );
+    }
 
-    // 獲取用戶的 name
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(userId)) {
+      return NextResponse.json(
+        { error: "無效的用戶 ID 格式", statusCode: 400 },
+        { status: 400 }
+      );
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { name: true },
     });
 
     if (!user) {
-      return NextResponse.json({ error: "找不到用戶" }, { status: 404 });
+      return NextResponse.json({ error: "找不到用戶", statusCode: 404 }, { status: 404 });
     }
 
     const userName = user.name || "匿名用戶";
 
-    // 查詢用戶作為教師的課程（通過 teacherId）
     const teacherCourses = await prisma.course.findMany({
       where: { teacherId: userId },
       select: {
@@ -194,7 +210,6 @@ export async function GET(req: NextRequest): Promise<NextResponse<CourseWithDeta
       },
     });
 
-    // 查詢用戶作為學生的課程（通過 Students 字段）
     const studentCourses = await prisma.course.findMany({
       where: { Students: { has: userName } },
       select: {
@@ -210,7 +225,6 @@ export async function GET(req: NextRequest): Promise<NextResponse<CourseWithDeta
       },
     });
 
-    // 合併並去重課程（避免教師和學生的課程重複）
     const uniqueCourses = [
       ...teacherCourses,
       ...studentCourses.filter(

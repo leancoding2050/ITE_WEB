@@ -14,7 +14,7 @@ const handler = async (data: InputType) : Promise<ReturnType> => {
     let Certigificate_data;
 
     try {
-        Certigificate_data = await db.coursePorductType.create({
+        Certigificate_data = await db.courseProductType.create({
             data: {
                 typename:typename,
                 author:author,

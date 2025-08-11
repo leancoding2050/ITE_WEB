@@ -8,7 +8,7 @@ export async function deleteType(id: string) {
   }
 
   try {
-    const statue = await db.coursePorductType.findUnique({
+    const statue = await db.courseProductType.findUnique({
       where: { id },
     });
 
@@ -16,7 +16,7 @@ export async function deleteType(id: string) {
       throw new Error("未找到指定的type");
     }
 
-    await db.coursePorductType.delete({
+    await db.courseProductType.delete({
       where: { id },
     });
 

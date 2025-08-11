@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth, UserRole } from "@/auth";
-import type { Course } from "@prisma/client";
+
 
 interface AddStudentToCourseInput {
   cartId: string;

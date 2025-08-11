@@ -29,7 +29,41 @@ type CourseDateForm = z.infer<typeof CourseDateSchema>;
 interface UpdateCourseResult {
   success: boolean;
   error?: string;
-  course?: any; // 返回更新後的課程數據
+  course?: {
+    id: string;
+    title: string;
+    description: string;
+    courseCode: string;
+    schoolName: string;
+    CourseTypes?: string | null;
+    startDate?: string | null;
+    endDate?: string | null;
+    Coursedates: string[];
+    numberOfDays: number;
+    timeHours: number;
+    timeRange: string[];
+    teacher: string[];
+    teacherId: string;
+    isPublic: boolean;
+    isProduct: boolean;
+    Producted: boolean;
+    Students: string[];
+    type: string[];
+    classroom?: string | null;
+    weekday?: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    courseModulId?: string | null;
+    CourseTimeRanges: Array<{
+      id: string;
+      courseId: string;
+      timeRange: string;
+      starttime?: string | null;
+      endtime?: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+    }>;
+  };
 }
 
 export async function updateCourseDates(data: CourseDateForm): Promise<UpdateCourseResult> {

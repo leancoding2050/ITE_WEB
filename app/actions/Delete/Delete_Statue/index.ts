@@ -9,7 +9,7 @@ export async function deleteStatue(id: string) {
   }
 
   try {
-    const statue = await db.coursePorductStatue.findUnique({
+    const statue = await db.courseProductStatus.findUnique({
       where: { id },
     });
 
@@ -17,7 +17,7 @@ export async function deleteStatue(id: string) {
       throw new Error("未找到指定的狀態");
     }
 
-    await db.coursePorductStatue.delete({
+    await db.courseProductStatus.delete({
       where: { id },
     });
 

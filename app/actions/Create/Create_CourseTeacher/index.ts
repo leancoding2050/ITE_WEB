@@ -254,7 +254,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     }
 
     // 驗證課程類型
-    const validTypes = await db.coursePorductType.findMany({
+    const validTypes = await db.courseProductType.findMany({
       where: {
         id: { in: type },
       },
