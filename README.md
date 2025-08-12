@@ -77,3 +77,16 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 30-7-2025
 
 修改了 admin 中 的老師ID , product的 CSS ,首面shop 的商品出現了 ,明天要加入product的修改頁面, 以及看看shop 的bug
+
+12-08-2025
+
+早上做了deploy 下午出現了以下
+
+12-Aug 2025 ITE BUG
+
+#Admin 使用者列表的使用者按Detail 出 404
+#User 比吾到錢
+#User 商城Filter 左合適條件後 Del左啲字 產品出吾翻來
+#User 加左購物錢會吾知Show起邊 Del左佢？
+#User 付款紀錄
+#Teacher 我的資料顯示404

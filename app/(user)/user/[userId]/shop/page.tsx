@@ -11,8 +11,8 @@ interface CourseProduct {
   description: string;
   price: number;
   real_price: number;
-  CourseProductTypeArray: string[]; // 修正拼寫
-  CourseProductStatusArray: string[]; // 修正拼寫
+  CourseProductTypeArray: string[];
+  CourseProductStatusArray: string[];
 }
 
 interface CourseProductType {
@@ -33,7 +33,8 @@ const ShopPage = () => {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [productLists, setProductLists] = useState<CourseProduct[]>([]);
+  const [originalProductLists, setOriginalProductLists] = useState<CourseProduct[]>([]); // 儲存原始數據
+  const [filteredProductLists, setFilteredProductLists] = useState<CourseProduct[]>([]); // 儲存過濾後的數據
   const [courseProductTypes, setCourseProductTypes] = useState<CourseProductType[]>([]);
   const [courseProductStatuses, setCourseProductStatuses] = useState<CourseProductStatus[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -48,7 +49,8 @@ const ShopPage = () => {
       }
       const data = await response.json();
       console.log("API 返回的商品數據:", data);
-      setProductLists(data);
+      setOriginalProductLists(data); // 設置原始數據
+      setFilteredProductLists(data); // 初始化過濾數據
       setError(null);
     } catch (error: unknown) {
       console.error("獲取商品數據失敗:", error);
@@ -101,11 +103,12 @@ const ShopPage = () => {
 
   useEffect(() => {
     const filterProducts = () => {
-      if (!productLists.length) {
+      if (!originalProductLists.length) {
+        setFilteredProductLists([]);
         return;
       }
 
-      let filtered = productLists;
+      let filtered = [...originalProductLists]; // 從原始數據開始過濾
 
       if (selectedTypes.length > 0) {
         filtered = filtered.filter((product) =>
@@ -129,11 +132,11 @@ const ShopPage = () => {
         );
       }
 
-      setProductLists(filtered);
+      setFilteredProductLists(filtered); // 更新過濾後的數據
     };
 
     filterProducts();
-  }, [selectedTypes, selectedStatuses, searchQuery, productLists]);
+  }, [selectedTypes, selectedStatuses, searchQuery, originalProductLists]);
 
   const handleTypeChange = (typeId: string) => {
     setSelectedTypes((prev) =>
@@ -195,7 +198,7 @@ const ShopPage = () => {
 
   console.log("courseProductStatuses:", courseProductStatuses, "-- End --");
   console.log("courseProductTypes:", courseProductTypes, "-- End --");
-  console.log("productLists:", productLists, "-- End --");
+  console.log("filteredProductLists:", filteredProductLists, "-- End --");
 
   return (
     <div className="bg-gray-900 min-h-screen text-white">
@@ -252,7 +255,7 @@ const ShopPage = () => {
 
         {/* 商品列表 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {productLists.map((product) => (
+          {filteredProductLists.map((product) => (
             <div
               key={product.id}
               className="bg-gray-800 shadow-lg rounded-lg p-4 hover:bg-gray-700 transition"
@@ -271,7 +274,7 @@ const ShopPage = () => {
               </Link>
             </div>
           ))}
-          {productLists.length === 0 && (
+          {filteredProductLists.length === 0 && (
             <p className="text-center col-span-full text-gray-400">未找到符合條件的課程</p>
           )}
         </div>

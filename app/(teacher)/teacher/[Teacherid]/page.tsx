@@ -16,7 +16,7 @@ const TeacherPagebyId = () => {
         <h1 className="text-2xl font-bold mb-6">歡迎，教師 {TeacherId}</h1>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Link
-            href={`/teacher/${TeacherId}/accounts`}
+            href={`/teacher/${TeacherId}/Accounts`}
             className="block bg-gray-700 p-4 rounded-md shadow-md hover:bg-gray-600 transition"
           >
             <h2 className="text-lg font-semibold">帳戶管理</h2>
