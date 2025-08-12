@@ -19,16 +19,51 @@ interface UserData {
   teacherholidaysDateTime: string[];
 }
 
+interface Account {
+  id: string;
+  cilent_name: string;
+  title: string;
+  description: string;
+  price: number;
+  total: number;
+  date: string;
+  client_id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function UserPage() {
   const { data: session, status } = useSession();
   const params = useParams();
   const router = useRouter();
   const userId = params.userId as string;
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [filteredAccounts, setFilteredAccounts] = useState<Account[]>([]);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    async function fetchAccountsData() {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/api/Accounts/Get_Accounts_Lists_by_User/${userId}`);
+        if (!response.ok) {
+          throw new Error(`請求失敗: ${response.status}`);
+        }
+        const data = await response.json();
+        setAccounts(data);
+        setFilteredAccounts(data); // 初始化時顯示所有帳目
+      } catch (error) {
+        console.error("Error fetching accounts data:", error);
+        setError("無法獲取帳目數據");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
     async function fetchUserData() {
       try {
         setIsLoading(true);
@@ -41,14 +76,35 @@ export default function UserPage() {
       } catch (error) {
         console.error("Error fetching user data:", error);
         setError("無法獲取用戶數據");
-      } finally {
-        setIsLoading(false);
       }
     }
+    
     if (status === "authenticated") {
       fetchUserData();
+      fetchAccountsData();
     }
   }, [status, userId]);
+
+  // 應用日期篩選
+  useEffect(() => {
+    let result = accounts;
+    
+    if (startDate) {
+      result = result.filter(account => 
+        new Date(account.date) >= new Date(startDate)
+  )}
+    
+    if (endDate) {
+      // 結束日期加一天以包含當天的所有記錄
+      const end = new Date(endDate);
+      end.setDate(end.getDate() + 1);
+      
+      result = result.filter(account => 
+        new Date(account.date) < end)
+    }
+    
+    setFilteredAccounts(result);
+  }, [startDate, endDate, accounts]);
 
   // 檢查登錄狀態和用戶ID
   useEffect(() => {
@@ -87,18 +143,15 @@ export default function UserPage() {
     return null;
   }
 
-  console.log("userData:", userData, " -- End -- ");
-
   return (
     <div className="bg-gray-900 min-h-screen text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* 標題 */}
-        <h1 className="text-2xl font-bold mb-6">歡迎，{session.user.name}</h1>
-
-        {/* 用戶數據展示 */}
+        {/* 上方：用戶資料部分 */}
         <div className="bg-gray-800 shadow-lg rounded-lg p-6 mb-6">
+          <h1 className="text-2xl font-bold mb-6">歡迎，{session.user.name}</h1>
           <h2 className="text-xl font-semibold mb-4">用戶資料</h2>
-          {userData && (
+          
+          {userData ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-gray-400">用戶 ID</p>
@@ -124,14 +177,90 @@ export default function UserPage() {
                 <p className="text-sm text-gray-400">角色</p>
                 <p className="text-base">{userData.role}</p>
               </div>
+            </div>
+          ) : (
+            <p className="text-gray-400">無用戶數據</p>
+          )}
+        </div>
 
+        {/* 下方：帳目數據部分 */}
+        <div className="bg-gray-800 shadow-lg rounded-lg p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+            <h2 className="text-xl font-semibold mb-4 sm:mb-0">帳目記錄</h2>
+            
+            {/* 日期篩選器 */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">開始日期</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="bg-gray-700 text-white rounded px-3 py-2 w-full"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">結束日期</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="bg-gray-700 text-white rounded px-3 py-2 w-full"
+                />
+              </div>
+              
+              <button
+                onClick={() => {
+                  setStartDate("");
+                  setEndDate("");
+                }}
+                className="mt-6 sm:mt-auto px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 transition"
+              >
+                清除篩選
+              </button>
+            </div>
+          </div>
+
+          {/* 帳目表格 */}
+          {filteredAccounts.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-700">
+                <thead>
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">標題</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">客戶名稱</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">描述</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">單價</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">總價</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">日期</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {filteredAccounts.map((account) => (
+                    <tr key={account.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">{account.title}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{account.cilent_name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{account.description}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">${account.price}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">${account.total}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {new Date(account.date).toLocaleDateString('zh-TW')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-400">沒有找到符合條件的帳目記錄</p>
             </div>
           )}
-          {!userData && <p className="text-gray-400">無用戶數據</p>}
         </div>
 
         {/* 導航鏈接 */}
-        <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
+        <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0 mt-6">
           <Link
             href={`/user/${userId}/Calendar`}
             className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition"
