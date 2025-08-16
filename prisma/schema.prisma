@@ -175,6 +175,7 @@ model CourseModul {
   title            String
   description      String
   Teaching_Materials String?
+  originalFileName  String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   TeacherId        String
@@ -193,17 +194,18 @@ model Message_Box {
 }
 
 model Accounts {
-  id        String      @id @default(uuid())
-  cilent_name String
-  title  String
-  description String
-  price Int
-  total Int
-  date String
-  client_id String
-  Client_User User @relation(fields: [client_id], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String      @id @default(uuid())
+  client_name  String      // 改為 client_name
+  title        String
+  description  String
+  price        Int
+  total        Int
+  date         String
+  client_id    String
+  products     Json?
+  Client_User  User        @relation(fields: [client_id], references: [id])
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 }
 
 model NITTP {

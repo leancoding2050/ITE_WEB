@@ -5,7 +5,7 @@ import Create_CourseModul_Form from "@/components/CreateForm/Create-CourseModul-
 const CreateTeachingMaterialsPage = () => {
   return (
     <div>
-    <Create_CourseModul_Form />
+        <Create_CourseModul_Form />
     </div>
   )
 }

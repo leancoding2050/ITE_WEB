@@ -90,3 +90,17 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 #User 加左購物錢會吾知Show起邊 Del左佢？
 #User 付款紀錄
 #Teacher 我的資料顯示404
+
+
+
+15-08-2025
+
+修改了client 的register form 
+加入阿里云OSS 在老師上傳檔案
+把收費的USD 轉回 HKD
+在prisma DB 中 老師教材DB中 加了一個fieldoriginalFileName
+修改了有關老師教材的schema
+server side server action function 
+加入了upload api (是oss 的)
+是用戶 -> api -> api中再用server side function (存DB data)
+upload 檔案大小為20MB

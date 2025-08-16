@@ -433,7 +433,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       payment_method_types: ['card'],
       line_items: items.map((item) => ({
         price_data: {
-          currency: process.env.STRIPE_CURRENCY || 'usd',
+          currency: process.env.STRIPE_CURRENCY || 'hkd',
           product_data: {
             name: item.name,
           },

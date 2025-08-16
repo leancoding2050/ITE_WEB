@@ -29,7 +29,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <SessionProvider>
-          <Navbar /> {/* 添加 Navbar 組件 */}
+          <Navbar /> {/*  添加 Navbar 組件 */}
           <main>{children}</main> {/* 將頁面內容放入 main 標籤 */}
         </SessionProvider>
       </body>

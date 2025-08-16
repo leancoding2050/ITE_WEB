@@ -54,6 +54,7 @@
 
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 interface AccountsData {
@@ -178,6 +179,12 @@ const AccountsListsPage = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* 左側：帳目數據 */}
           <div className="w-full lg:w-1/2 bg-white rounded-lg shadow-md p-6">
+            <Link href={'/admin/Accounts/createBill'}>
+              <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                新增帳目
+              </button>
+            </Link>
+
             <h2 className="text-xl font-semibold mb-4 text-gray-700">帳目記錄</h2>
             
             <div className="overflow-x-auto">

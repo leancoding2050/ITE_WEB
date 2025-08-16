@@ -1,15 +1,16 @@
 "use client"
 
-import CreateUserForm from "@/components/CreateForm/Create-User-Form"
 
-const CreateUserPage = () => {
+import CreateUserForm_client from "@/components/CreateForm/Create-User-Form_client"
+
+const CreateUserPage_client = () => {
     return (
         <>
             <div>
-                <CreateUserForm/>
+                <CreateUserForm_client/>
             </div>
         </>
     )
 }
 
-export default CreateUserPage
+export default CreateUserPage_client

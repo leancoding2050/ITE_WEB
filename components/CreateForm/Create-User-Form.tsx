@@ -158,9 +158,12 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CreateUserAction } from "@/app/actions/Create/Create_user";
+import { useRouter } from "next/navigation";
 
 const CreateUserForm = () => {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter(); 
+
 
   const user_create_form = useForm<z.infer<typeof CreateUserSchema>>({
     resolver: zodResolver(CreateUserSchema),
@@ -176,15 +179,36 @@ const CreateUserForm = () => {
   const user_create_form_onSubmit = async (values: z.infer<typeof CreateUserSchema>) => {
     console.log("-- 用户输入数据 -- :", values, "-- 结束 --");
     startTransition(async () => {
-      const result = await CreateUserAction(values);
-      if (!result.data) {
-        user_create_form.setError("root", { message: result.error || "創建用戶失敗" });
-      } else {
-        user_create_form.reset();
-        alert("用戶創建成功！");
+      
+      // if (!result.data) {
+      //   user_create_form.setError("root", { message: result.error || "創建用戶失敗" });
+      // } else {
+      //   user_create_form.reset();
+      //   alert("用戶創建成功！");
         // 可選：重定向到用戶列表
         // window.location.href = "/admin/UserLists";
-      }
+      // }
+
+
+                  try {
+                    const result = await CreateUserAction(values);
+                    // 檢查是否有錯誤
+                    if (!result.error) {
+                      router.push(`/login`); // 無錯誤表示成功，導航
+                    } else {
+                      console.error("提交失敗:", result.error);
+                      user_create_form.setError("root", {
+                        type: "manual",
+                        message: result.error || "提交失敗，請重試",
+                      });
+                    }
+                  } catch (error) {
+                    console.error("提交時發生錯誤:", error);
+                    user_create_form.setError("root", {
+                      type: "manual",
+                      message: "提交失敗，請重試",
+                    });
+                  }
     });
   };
 
