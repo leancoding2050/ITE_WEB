@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { Accounts } from '@prisma/client'; // 假設 Accounts 是 Prisma 模型
 
 export async function GET() {
+  console.log("in server GET")
   try {
     const accounts: Accounts[] = await db.accounts.findMany();
     return NextResponse.json(accounts);

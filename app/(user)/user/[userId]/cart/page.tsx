@@ -92,7 +92,7 @@ export default function CartPage() {
               <div>
                 <h2>{item.product.title}</h2>
                 <p>數量: {item.quantity}</p>
-                <p>價格: ${(item.product.real_price / 100).toFixed(2)}</p>
+                <p>價格: ${(item.product.real_price).toFixed(2)}</p>
               </div>
               <button
                 onClick={() => handleRemove(item.id)}

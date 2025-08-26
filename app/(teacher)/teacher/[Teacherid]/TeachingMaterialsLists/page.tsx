@@ -62,13 +62,21 @@ const TeachingMaterialsPage = () => {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {CourseModul.map((modul) => (
-              <div
+              <Link
                 key={modul.id}
+                href={`/teacher/${TeacherId}/TeachingMaterialsLists/${modul.id}`}
                 className="bg-gray-700 p-4 rounded-md shadow-md hover:bg-gray-600 transition"
               >
                 <h2 className="text-lg font-semibold">{modul.title}</h2>
                 <p className="text-sm text-gray-300 mt-2">{modul.description}</p>
-              </div>
+              </Link>
+              // <div
+              //   key={modul.id}
+              //   className="bg-gray-700 p-4 rounded-md shadow-md hover:bg-gray-600 transition"
+              // >
+              //   <h2 className="text-lg font-semibold">{modul.title}</h2>
+              //   <p className="text-sm text-gray-300 mt-2">{modul.description}</p>
+              // </div>
             ))}
           </div>
         )}

@@ -17,6 +17,9 @@ import { CreateProductSchema } from "@/app/actions/Create/Create_Product/schema"
 import { CreateProductAction } from "@/app/actions/Create/Create_Product";
 import { Switch } from "@/components/ui/switch";
 import { useRouter } from "next/navigation";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+
 
 // 定義課程物件的型別，根據 Prisma 的 Course model
 interface Course {
@@ -44,31 +47,87 @@ interface FormValues {
   courseId: string | null;
 }
 
+interface CourseProductType {
+  id: string;
+  typename: string;
+  author: string;
+  role: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CourseProductStatus {
+  id: string;
+  statuename: string;
+  createdAt: string;
+  updatedAt: string;
+}
 const Create_Product_Form = () => {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const [GetCourseListsData, setGetCourseListsData] = useState<Course[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [GetTypeData, setGetTypeData] = useState<CourseProductType[]>([]); // 修改為數組
+  const [GetStatueDadta, setGetStatueDadta] = useState<CourseProductStatus[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
 
-  useEffect(() => {
-    const fetchCourseListsData = async () => {
-      try {
-        const response = await fetch("/api/Course/Get_Course_Lists");
-        if (!response.ok) {
-          throw new Error(`API 錯誤: ${response.status} ${response.statusText}`);
-        }
-        const data = await response.json();
-        if (data.error) {
-          throw new Error(data.error);
-        }
-        setGetCourseListsData(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "無法獲取課程數據");
+useEffect(() => {
+  const fetchCourseListsData = async () => {
+    try {
+      const response = await fetch("/api/Course/Get_Course_Lists");
+      if (!response.ok) {
+        throw new Error(`API 錯誤: ${response.status} ${response.statusText}`);
       }
-    };
-    fetchCourseListsData();
-  }, []);
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      setGetCourseListsData(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "無法獲取課程數據");
+    }
+  };
+
+  const fetchTypeListsData = async () => {
+    try {
+      const response = await fetch("/api/Type/Get_Type_Lists");
+      if (!response.ok) {
+        throw new Error(`API 錯誤: ${response.status} ${response.statusText}`);
+      }
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      console.log("Type Data:", data); // 調試 API 響應
+      setGetTypeData(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "無法獲取類型數據");
+    }
+  };
+
+  const fetchStatueListsData = async () => {
+    try {
+      const response = await fetch("/api/Status/Get_Status_Lists");
+      if (!response.ok) {
+        throw new Error(`API 錯誤: ${response.status} ${response.statusText}`);
+      }
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      console.log("Status Data:", data); // 調試 API 響應
+      setGetStatueDadta(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "無法獲取狀態數據");
+    }
+  };
+
+  fetchCourseListsData();
+  fetchTypeListsData();
+  fetchStatueListsData();
+}, []);
 
   console.log("GetCourseListsData : ", GetCourseListsData, "-- End --");
 
@@ -94,35 +153,44 @@ const Create_Product_Form = () => {
     user_Product_form.setValue("courseId", course.id);
   };
 
-  const user_Product_form_onSubmit = (values: FormValues) => {
-    console.log(
-      "-- 商品輸入數據 -- :",
-      values,
-      "-- price type -- :",
-      typeof values.price,
-      "-- 結束 --"
-    );
-    startTransition(async () => {
-      try {
-        const result = await CreateProductAction(values);
-        console.log("-- 服務端響應 -- :", result, "-- 結束 --");
-        if (!result.error) {
-          router.push(`/admin/ProductLists`);
-        } else {
-          user_Product_form.setError("root", {
-            type: "manual",
-            message: result.error || "提交失敗，請重試",
-          });
-        }
-      } catch (error) {
-        console.error("提交時發生錯誤:", error);
+  useEffect(() => {
+    user_Product_form.setValue("CourseProductTypeArray", selectedTypes);
+    user_Product_form.setValue("CourseProductStatusArray", selectedStatuses);
+  }, [selectedTypes, selectedStatuses, user_Product_form]);
+
+const user_Product_form_onSubmit = (values: FormValues) => {
+  console.log(
+    "-- 商品輸入數據 -- :",
+    values,
+    "-- price type -- :",
+    typeof values.price,
+    "-- CourseProductTypeArray -- :",
+    values.CourseProductTypeArray,
+    "-- CourseProductStatusArray -- :",
+    values.CourseProductStatusArray,
+    "-- 結束 --"
+  );
+  startTransition(async () => {
+    try {
+      const result = await CreateProductAction(values);
+      console.log("-- 服務端響應 -- :", result, "-- 結束 --");
+      if (!result.error) {
+        router.push(`/admin/ProductLists`);
+      } else {
         user_Product_form.setError("root", {
           type: "manual",
-          message: "提交失敗，請重試",
+          message: result.error || "提交失敗，請重試",
         });
       }
-    });
-  };
+    } catch (error) {
+      console.error("提交時發生錯誤:", error);
+      user_Product_form.setError("root", {
+        type: "manual",
+        message: "提交失敗，請重試",
+      });
+    }
+  });
+};
 
   console.log("-- 產品表單狀態 -- :", user_Product_form.formState.errors, "-- 結束 --");
 
@@ -242,6 +310,68 @@ const Create_Product_Form = () => {
                   <FormControl>
                     <Switch checked={field.value} onCheckedChange={field.onChange} disabled={isPending} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* CourseProductTypeArray Checkbox */}
+            <FormField
+              control={user_Product_form.control}
+              name="CourseProductTypeArray"
+              render={() => (
+                <FormItem>
+                  <FormLabel>產品類型</FormLabel>
+                  <div className="grid gap-2">
+                    {GetTypeData.map((type) => (
+                      <div key={type.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={type.id}
+                          checked={selectedTypes.includes(type.typename)}
+                          onCheckedChange={(checked) => {
+                            setSelectedTypes((prev) =>
+                              checked
+                                ? [...prev, type.typename]
+                                : prev.filter((t) => t !== type.typename)
+                            );
+                          }}
+                          disabled={isPending}
+                        />
+                        <Label htmlFor={type.id}>{type.typename}</Label>
+                      </div>
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* CourseProductStatusArray Checkbox */}
+            <FormField
+              control={user_Product_form.control}
+              name="CourseProductStatusArray"
+              render={() => (
+                <FormItem>
+                  <FormLabel>產品狀態</FormLabel>
+                  <div className="grid gap-2">
+                    {GetStatueDadta.map((status) => (
+                      <div key={status.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={status.id}
+                          checked={selectedStatuses.includes(status.statuename)}
+                          onCheckedChange={(checked) => {
+                            setSelectedStatuses((prev) =>
+                              checked
+                                ? [...prev, status.statuename]
+                                : prev.filter((s) => s !== status.statuename)
+                            );
+                          }}
+                          disabled={isPending}
+                        />
+                        <Label htmlFor={status.id}>{status.statuename}</Label>
+                      </div>
+                    ))}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

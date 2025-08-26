@@ -481,7 +481,7 @@ export async function POST(
     const currentDate = new Date().toISOString();
     await prisma.accounts.createMany({
       data: cart.items.map((item) => ({
-        cilent_name: username, // 使用 username 作為 cilent_name
+        client_name: username, // 使用 username 作為 cilent_name
         title: item.product.title, // 從產品拿 title
         description: item.product.description, // 從產品拿 description
         price: item.product.price, // 單價

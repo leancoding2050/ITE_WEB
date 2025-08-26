@@ -6,14 +6,14 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface ProductLists {
-  id: number;
+  id: string; // 修改為 string 以匹配 Prisma 的 uuid
   title: string;
   description: string;
   price: number;
   real_price?: number;
   IsPublic?: boolean;
-  image: string;
-  category: string;
+  image?: string | null; // 允許 null
+  category?: string; // 設為可選
   created_at: string;
   updated_at: string;
 }
@@ -33,6 +33,7 @@ const ProductListsPagebyId = () => {
           throw new Error(`API 錯誤: ${res.status} ${res.statusText}`);
         }
         const data = await res.json();
+        console.log("Product Data:", data); // 調試 API 響應
         setGetProductDatabyId(data);
       } catch (error) {
         setError(error instanceof Error ? error.message : "無法載入產品數據");
@@ -95,7 +96,8 @@ const ProductListsPagebyId = () => {
                     {GetProductDatabyId.IsPublic ? "公開" : "不公開"}
                   </div>
                   <div>
-                    <span className="font-medium">類別:</span> {GetProductDatabyId.category}
+                    <span className="font-medium">類別:</span>{" "}
+                    {GetProductDatabyId.category ?? "未分類"}
                   </div>
                   <div>
                     <span className="font-medium">創建時間:</span>{" "}
@@ -109,11 +111,19 @@ const ProductListsPagebyId = () => {
               </div>
               <div className="mt-4 md:mt-0">
                 <span className="font-medium">產品圖片:</span>
-                <Image
-                  src={GetProductDatabyId.image}
-                  alt={GetProductDatabyId.title}
-                  className="mt-2 w-full max-w-xs rounded-md shadow-md"
-                />
+                {GetProductDatabyId.image && GetProductDatabyId.image !== "" ? (
+                  <Image
+                    src={GetProductDatabyId.image}
+                    alt={GetProductDatabyId.title}
+                    width={300}
+                    height={300}
+                    className="mt-2 w-full max-w-xs rounded-md shadow-md"
+                  />
+                ) : (
+                  <div className="mt-2 w-full max-w-xs h-40 bg-gray-700 rounded-md flex items-center justify-center">
+                    <span className="text-gray-400">無圖片</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

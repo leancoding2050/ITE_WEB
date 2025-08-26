@@ -45,25 +45,32 @@ export default function UserPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchAccountsData() {
-      try {
-        setIsLoading(true);
-        const response = await fetch(`/api/Accounts/Get_Accounts_Lists_by_User/${userId}`);
-        if (!response.ok) {
-          throw new Error(`請求失敗: ${response.status}`);
-        }
-        const data = await response.json();
-        setAccounts(data);
-        setFilteredAccounts(data); // 初始化時顯示所有帳目
-      } catch (error) {
-        console.error("Error fetching accounts data:", error);
-        setError("無法獲取帳目數據");
-      } finally {
-        setIsLoading(false);
-      }
-    }
+  console.log("userId:",userId,"--end--")
 
+  useEffect(() => {
+async function fetchAccountsData() {
+  try {
+    setIsLoading(true);
+    const response = await fetch(`/api/Accounts/Get_Accounts_Lists_by_User/${userId}`);
+    if (!response.ok) {
+      if (response.status === 404) {
+        // 404 表示無匹配記錄，返回空陣列
+        setAccounts([]);
+        setFilteredAccounts([]);
+        return;
+      }
+      throw new Error(`請求失敗: ${response.status}`);
+    }
+    const data = await response.json();
+    setAccounts(data);
+    setFilteredAccounts(data); // 初始化時顯示所有帳目
+  } catch (error) {
+    console.error("Error fetching accounts data:", error);
+    setError("無法獲取帳目數據");
+  } finally {
+    setIsLoading(false);
+  }
+}
     async function fetchUserData() {
       try {
         setIsLoading(true);

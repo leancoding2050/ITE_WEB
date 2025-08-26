@@ -259,6 +259,7 @@ interface CourseProduct {
   title: string;
   description: string;
   price: number;
+  real_price: number;
   CoursePorductTypeArray: string[];
   CoursePorductStatueArray: string[];
 }
@@ -483,7 +484,8 @@ const ShopPage = () => {
             <Link href={`/user/${userId}/shop/${product.id}`} onClick={handleProductClick}>
               <h2 className="text-lg font-semibold">{product.title}</h2>
               <p className="text-gray-600">{product.description}</p>
-              <p className="text-blue-600 font-bold mt-2">HK${(product.price / 100).toFixed(2)}</p>
+              <p className="text-blue-600 font-bold mt-2">HK${(product.price ).toFixed(2)}</p>
+              <p className="text-blue-600 font-bold mt-2">打折後  HK${(product.real_price ).toFixed(2)}</p>
             </Link>
           </div>
         ))}

@@ -89,8 +89,8 @@ const EditProductForm = () => {
     const fetchProductTypesAndStatuses = async () => {
       try {
         const [typesRes, statusesRes] = await Promise.all([
-          fetch("/api/product/types"),
-          fetch("/api/product/statuses"),
+          fetch("/api/Type/Get_Type_Lists"),
+          fetch("/api/Status/Get_Status_Lists"),
         ]);
         const typesData: ProductType[] = await typesRes.json();
         const statusesData: ProductStatus[] = await statusesRes.json();

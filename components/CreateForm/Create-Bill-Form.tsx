@@ -217,7 +217,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CreateBillSchema } from "@/app/actions/Create/Create_Bill/schema";
 import { CreateBillAction } from "@/app/actions/Create/Create_Bill";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner"; // 導入 Sonner 的 toast
+import { toast } from "sonner";
 
 interface User {
   id: string;
@@ -274,8 +274,13 @@ const CreateBillForm = () => {
         const response = await fetch("/api/product/Get_Product_Lists");
         if (!response.ok) throw new Error("無法獲取商品數據");
         const data = await response.json();
-        setProducts(data);
-        setFilteredProducts(data);
+        console.log("API 商品數據:", data); // 記錄原始 API 響應
+        const sanitizedData = data.map((product: Product) => ({
+          ...product,
+          real_price: Number(product.real_price), // 確保 real_price 為數字
+        }));
+        setProducts(sanitizedData);
+        setFilteredProducts(sanitizedData);
       } catch (error) {
         console.error("獲取商品數據失敗:", error);
         toast.error("無法獲取商品數據，請稍後重試。", {
@@ -322,31 +327,49 @@ const CreateBillForm = () => {
 
   // 計算總金額並更新產品列表
   useEffect(() => {
-    const total = selectedProducts.reduce((sum, product) => sum + product.real_price, 0);
-    bill_form.setValue("total", total);
-    bill_form.setValue(
-      "products",
-      selectedProducts.map((product) => ({
+    const total = selectedProducts.reduce((sum, product) => {
+      if (typeof product.real_price !== "number" || isNaN(product.real_price)) {
+        console.error(`無效的 real_price，產品 ${product.title}：`, product.real_price);
+        return sum;
+      }
+      return sum + product.real_price;
+    }, 0);
+
+    const products = selectedProducts
+      .filter((product) => product.title && product.description && typeof product.real_price === "number" && !isNaN(product.real_price))
+      .map((product) => ({
         title: product.title,
         description: product.description,
         price: product.real_price,
-      }))
-    );
+      }));
+
+    bill_form.setValue("total", total);
+    bill_form.setValue("products", products);
+
+    if (products.length === 0) {
+      console.warn("未選擇有效產品");
+    }
   }, [selectedProducts, bill_form]);
 
   // 提交表單
   const bill_form_onSubmit = (values: z.infer<typeof CreateBillSchema>) => {
+    if (selectedProducts.length === 0) {
+      toast.error("請至少選擇一個商品。", {
+        description: "錯誤",
+      });
+      return;
+    }
+
     startTransition(async () => {
       try {
-
-              const submitData = {
-        ...values,
-        products: selectedProducts.map((product) => ({
-          title: product.title,
-          description: product.description,
-          price: product.real_price,
-        })),
-      };
+        const submitData = {
+          ...values,
+          products: selectedProducts.map((product) => ({
+            title: product.title,
+            description: product.description,
+            price: product.real_price,
+          })),
+        };
         const result = await CreateBillAction(submitData);
         if (result.data) {
           toast.success("帳單已成功創建！", {
@@ -367,8 +390,6 @@ const CreateBillForm = () => {
     });
   };
 
-
-
   // 添加商品到列表
   const handleAddProduct = (product: Product) => {
     setSelectedProducts((prev) => [...prev, product]);
@@ -379,6 +400,8 @@ const CreateBillForm = () => {
     setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
   };
 
+  console.log("bug : ", bill_form.formState.errors ,"-- End --")
+
   return (
     <Form {...bill_form}>
       <form onSubmit={bill_form.handleSubmit(bill_form_onSubmit)} className="space-y-6">
@@ -386,7 +409,7 @@ const CreateBillForm = () => {
           <FormField
             control={bill_form.control}
             name="client_name"
-            render={({ field }) => (
+            render={() => (
               <FormItem>
                 <FormLabel>學生名字</FormLabel>
                 <Input
@@ -456,65 +479,99 @@ const CreateBillForm = () => {
           />
         </div>
 
-        <div>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button type="button" disabled={isPending}>
-                加入商品
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl">
-              <DialogHeader>
-                <DialogTitle>選擇商品</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <Input
-                  placeholder="搜尋商品標題或描述"
-                  value={productSearch}
-                  onChange={(e) => setProductSearch(e.target.value)}
-                />
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>標題</TableHead>
-                      <TableHead>描述</TableHead>
-                      <TableHead>價格</TableHead>
-                      <TableHead>實際價格</TableHead>
-                      <TableHead>操作</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredProducts.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell>{product.title}</TableCell>
-                        <TableCell>{product.description}</TableCell>
-                        <TableCell>HK${product.price.toFixed(2)}</TableCell>
-                        <TableCell>HK${product.real_price.toFixed(2)}</TableCell>
-                        <TableCell>
-                          <Button
-                            type="button"
-                            onClick={() => handleAddProduct(product)}
-                            disabled={isPending}
-                          >
-                            加入
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+<div>
+  <Dialog>
+    <DialogTrigger asChild>
+      <Button type="button" disabled={isPending}>
+        加入商品
+      </Button>
+    </DialogTrigger>
+    <DialogContent className="w-full max-w-[95vw] sm:max-w-3xl lg:max-w-4xl">
+      <DialogHeader>
+        <DialogTitle>選擇商品</DialogTitle>
+      </DialogHeader>
+      <div className="space-y-4">
+        <Input
+          placeholder="搜尋商品標題或描述"
+          value={productSearch}
+          onChange={(e) => setProductSearch(e.target.value)}
+          className="w-full"
+        />
 
+            <textarea name="" id=""></textarea>
+
+<div className="overflow-x-auto">
+  <Table>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-1/4">標題</TableHead>
+        <TableHead className="w-1/3 hidden md:table-cell">描述</TableHead>
+        <TableHead className="w-1/6">價格</TableHead>
+        <TableHead className="w-1/6">實際價格</TableHead>
+        <TableHead className="w-1/6 text-right">操作</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {filteredProducts.map((product) => (
+        <TableRow key={product.id}>
+          <TableCell className="w-1/4">{product.title}</TableCell>
+          <TableCell className="w-1/3 hidden md:table-cell">
+            <textarea
+              value={product.description}
+              readOnly
+              className="w-full max-w-[200px] h-16 resize-none border-none bg-transparent p-2 text-sm"
+              aria-label={`商品 ${product.title} 的描述`}
+            />
+          </TableCell>
+          <TableCell className="w-1/6">HK${product.price.toFixed(2)}</TableCell>
+          <TableCell className="w-1/6">HK${product.real_price.toFixed(2)}</TableCell>
+          <TableCell className="w-1/6 text-right">
+            <Button
+              type="button"
+              onClick={() => handleAddProduct(product)}
+              disabled={isPending}
+              className="w-full sm:w-auto"
+            >
+              加入
+            </Button>
+          </TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+</div>
+        {/* 行動設備上的卡片式佈局 */}
+        <div className="md:hidden space-y-4">
+          {filteredProducts.map((product) => (
+            <div key={product.id} className="border rounded-lg p-4">
+              <div className="font-semibold">{product.title}</div>
+              <div className="text-sm text-gray-600">{product.description}</div>
+              <div className="mt-2">
+                <span className="text-sm">價格: HK${product.price.toFixed(2)}</span>
+                <span className="ml-4 text-sm">實際價格: HK${product.real_price.toFixed(2)}</span>
+              </div>
+              <Button
+                type="button"
+                onClick={() => handleAddProduct(product)}
+                disabled={isPending}
+                className="mt-2 w-full"
+              >
+                加入
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </DialogContent>
+  </Dialog>
+</div>
         <div>
           <h3 className="text-lg font-semibold mb-2">已選擇的商品</h3>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>標題</TableHead>
-                <TableHead>描述</TableHead>
+                {/* <TableHead>描述</TableHead> */}
                 <TableHead>實際價格</TableHead>
                 <TableHead>操作</TableHead>
               </TableRow>
@@ -523,7 +580,7 @@ const CreateBillForm = () => {
               {selectedProducts.map((product, index) => (
                 <TableRow key={index}>
                   <TableCell>{product.title}</TableCell>
-                  <TableCell>{product.description}</TableCell>
+                  {/* <TableCell>{product.description}</TableCell> */}
                   <TableCell>HK${product.real_price.toFixed(2)}</TableCell>
                   <TableCell>
                     <Button
@@ -554,7 +611,7 @@ const CreateBillForm = () => {
                     disabled={isPending}
                     placeholder="總數"
                     type="number"
-                    value={field.value.toFixed(2)}
+                    value={field.value}
                     onChange={(e) => field.onChange(Number(e.target.value))}
                   />
                 </FormControl>
@@ -583,8 +640,11 @@ const CreateBillForm = () => {
         <Button type="submit" disabled={isPending} className="mt-4">
           {isPending ? "提交中..." : "建立單據"}
         </Button>
-        {bill_form.formState.errors.root && (
-          <p className="text-red-500 mt-2">{bill_form.formState.errors.root.message}</p>
+        {Object.keys(bill_form.formState.errors).length > 0 && (
+          <div className="mt-4 p-4 border border-red-500 rounded">
+            <h4 className="text-red-500 font-semibold">表單錯誤：</h4>
+            <pre>{JSON.stringify(bill_form.formState.errors, null, 2)}</pre>
+          </div>
         )}
       </form>
     </Form>

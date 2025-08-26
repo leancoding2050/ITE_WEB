@@ -163,7 +163,7 @@ export default function ProductPage() {
       <div className="mb-4">
         <h2 className="text-xl font-semibold">{getProduct.title}</h2>
         <p className="text-gray-600">{getProduct.description}</p>
-        <p className="text-lg font-bold">價格: ${(getProduct.real_price / 100).toFixed(2)}</p>
+        <p className="text-lg font-bold">價格: ${(getProduct.real_price).toFixed(2)}</p>
         {getProduct.Course && (
           <div className="mt-4">
             <p className="text-gray-700">

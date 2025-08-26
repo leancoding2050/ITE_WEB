@@ -538,10 +538,24 @@ export default function CheckoutPage() {
             <span>
               {item.product.title} (x{item.quantity})
             </span>
-            <span>${((item.quantity * item.product.real_price) / 100).toFixed(2)}</span>
+            <span>${((item.quantity * item.product.real_price)).toFixed(2)}</span>
           </div>
         ))}
-        <div className="font-bold mt-2">總計: ${(total / 100).toFixed(2)}</div>
+        <div className="font-bold mt-2">總計: ${(total).toFixed(2)}</div>
+
+
+        
+
+<p>
+  1. 所有課程費用一經繳付，概不退還。報名前請仔細閱讀課程詳情，如有查詢請通過WhatsApp（51001888）聯絡本中心。  
+</p>
+<p>2. 請假不設調堂安排，但本中心將提供當日課程講義予學員。</p>
+<p>3. 惡劣天氣安排：如遇八號或以上熱帶氣旋警告信號或黑色暴雨警告生效，當日課程將自動取消，補課安排將另行通知。</p>
+<p>4. 爭議處理：所有爭議事項最終解釋權歸本教育中心所有，並受香港特別行政區法律管轄。</p>
+
+        
+
+
       </div>
       <button
         onClick={handleSubmit}
