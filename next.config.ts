@@ -1,7 +1,19 @@
-import type { NextConfig } from "next";
+// import type { NextConfig } from "next";
 
+// const nextConfig: NextConfig = {
+//   /* config options here */
+// };
+
+// export default nextConfig;
+
+
+import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverActions: {
+    bodySizeLimit: '30mb',
+  },
 };
 
-export default nextConfig;
+console.log("Next.js Config Loaded:", nextConfig);
+
+module.exports = nextConfig;

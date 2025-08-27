@@ -164,6 +164,46 @@ const TeacherDatabyIdPage = () => {
     fetchTeacherData();
   }, [TeacherId]);
 
+
+// useEffect(() => {
+//   const fetchTeacherData = async () => {
+//     try {
+//       const res = await fetch(`/api/user/Get_User_Lists_by_Id/${TeacherId}`);
+//       if (!res.ok) {
+//         throw new Error(`API 錯誤: ${res.status} ${res.statusText}`);
+//       }
+//       const data = await res.json();
+
+//       // 為每個 CourseModule 的 Teaching_Materials 生成簽名 URL
+//       const updatedCourseModules = await Promise.all(
+//         data.CourseModul.map(async (module: CourseModule) => {
+//           if (!module.Teaching_Materials) return module;
+//           const objectKey = module.Teaching_Materials.split(
+//             "ite-teacher-fold.oss-cn-hongkong.aliyuncs.com/"
+//           )[1];
+//           const ossRes = await fetch("/api/oss/get-signed-url", {
+//             method: "POST",
+//             headers: { "Content-Type": "application/json" },
+//             body: JSON.stringify({
+//               objectKey,
+//               fileName: module.originalFileName,
+//             }),
+//           });
+//           if (!ossRes.ok) throw new Error("無法獲取簽名 URL");
+//           const ossData = await ossRes.json();
+//           return { ...module, Teaching_Materials: ossData.url };
+//         })
+//       );
+
+//       setGetTeacherData({ ...data, CourseModul: updatedCourseModules });
+//     } catch (error) {
+//       setError(error instanceof Error ? error.message : "無法載入老師數據");
+//     }
+//   };
+//   fetchTeacherData();
+// }, [TeacherId]);
+
+
   if (error) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">

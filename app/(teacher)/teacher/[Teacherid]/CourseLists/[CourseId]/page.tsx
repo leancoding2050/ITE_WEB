@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -30,9 +31,11 @@ interface CourseData {
 
 const Course_Data_by_Id = () => {
   const params = useParams();
+  const TeacherId = params.Teacherid as string;
   const courseId = params.CourseId as string;
   const [courseData, setCourseData] = useState<CourseData | null>(null);
   const [error, setError] = useState<string | null>(null);
+
 
   useEffect(() => {
     async function GetCourseDataById() {
@@ -70,6 +73,9 @@ const Course_Data_by_Id = () => {
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-2xl font-bold mb-6">課程詳情</h1>
+        <Link href={`/teacher/${TeacherId}/CourseLists/${courseId}/edit`}>
+        <h1 className="text-2xl font-bold mb-6">修改課程</h1>
+        </Link>
         <div className="bg-gray-800 shadow-lg rounded-lg p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
