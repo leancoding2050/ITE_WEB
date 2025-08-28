@@ -156,6 +156,8 @@ export default function ProductPage() {
     }
   };
 
+  console.log("getProduct :", getProduct)
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">商品詳情</h1>

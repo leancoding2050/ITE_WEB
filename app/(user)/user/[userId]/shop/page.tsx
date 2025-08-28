@@ -265,7 +265,7 @@ const ShopPage = () => {
                 <p className="text-gray-400 text-sm">{product.description}</p>
                 <div className="mt-2">
                   <p className="text-red-500 font-bold text-lg">
-                    家人們！！砍手價！！HK${(product.real_price ).toFixed(2)}
+                    砍手價！！HK${(product.real_price ).toFixed(2)}
                   </p>
                   <p className="text-gray-400 text-sm line-through">
                     原價: HK${(product.price ).toFixed(2)}

@@ -14,7 +14,7 @@ import { z } from "zod";
 export const CreateProductSchema = z.object({
   title: z.string().min(1, { message: "標題不能為空" }),
   description: z.string().min(1, { message: "描述不能為空" }),
-  price: z.number().min(1, { message: "價格必須大於 0" }),
+  price: z.number().min(0, { message: "價格必須大於 -1" }),
   real_price: z.number(),
   IsPublic: z.boolean(),
   CourseProductTypeArray: z.array(z.string()),

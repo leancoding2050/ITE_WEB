@@ -1,6 +1,9 @@
 import React from 'react';
-import TeacherIcon from "../public/image/Teacher_icon.png";
 import TeacherEricIcon from "../public/image/TeacherEricIcon.jpg";
+import WaiLung from "../public/image/WaiLung.jpeg";
+import HoncyLee from "../public/image/HoncyLee.jpeg";
+
+
 import Image from 'next/image';
 
 
@@ -15,7 +18,7 @@ export default function OurTeam() {
                 {/* Content Box 1 */}
                 <div className="mb-20 px-10 md:w-220 flex flex-col lg:flex-1/3 items-center">
                     <div className="flex justify-center">
-                      <Image src={TeacherIcon} height="150" width="150"  alt="" />
+                      <Image src={WaiLung} height="150" width="150"  alt="" />
                     </div>
                     <h3 className="pt-3 text-2xl font-extrabold text-cyan-700">Mr. Wai Lung</h3>
                     <h5 className="text-[14px] text-gray-600">Master of Science of Electrical Engineering, Polytechnic University of New York</h5>
@@ -30,7 +33,7 @@ export default function OurTeam() {
                 {/* Content Box 2 */}
                 <div className="mb-20 px-10 md:w-220 flex flex-col lg:flex-1/3 items-center">
                     <div className="flex justify-center">
-                      <Image src={TeacherIcon} height="150" width="150" alt="" />
+                      <Image src={HoncyLee} height="150" width="150" alt="" />
                     </div>
                     <h3 className="pt-3 text-2xl font-extrabold text-cyan-700">Mr. Honcy Lee</h3>
                     <h5 className="text-[14px] text-gray-600">BA in Accounting & Finance </h5>

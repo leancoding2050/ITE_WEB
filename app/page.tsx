@@ -1,3 +1,4 @@
+
 // 'use client';
 
 // import { useSession } from 'next-auth/react';
@@ -10,20 +11,28 @@
 //   title: string;
 //   description: string;
 //   price: number;
-//   typeIds: string[]; // 簡化命名
-//   statusIds: string[]; // 簡化命名
+//   real_price: number;
+//   CoursePorductTypeArray: string[];
+//   CoursePorductStatueArray: string[];
 // }
 
 // interface CourseProductType {
 //   id: string;
-//   typeName: string;
+//   typename: string; // 注意這裡是 typename，而不是 typeName
 //   author: string;
 // }
 
 // interface CourseProductStatus {
 //   id: string;
-//   statusName: string;
+//   statuename: string; // 注意這裡是 statuename，而不是 statusName
 // }
+
+// interface HeaderType {
+//   id: string;
+//   HeaderTypeName: string;
+
+// }
+
 
 // const ShopPage = () => {
 //   const { data: session, status } = useSession();
@@ -38,6 +47,24 @@
 //   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
 //   const [searchQuery, setSearchQuery] = useState<string>('');
 //   const [filteredProducts, setFilteredProducts] = useState<CourseProduct[]>([]);
+//   const [GetHeaderType , setGetHeaderType] = useState<HeaderType[]>([]);
+
+
+//   const fetchHeaderType = async () => {
+//     try {
+//       const response = await fetch('/api/Type/Get_HeaderType_Lists');
+//       if (!response.ok) {
+//         throw new Error(`無法獲取關鍵字數據: ${response.status}`);
+//       }
+//       const data = await response.json();
+//       setGetHeaderType(data);
+//       setError(null);
+//     } catch (error: unknown) {
+//       console.error('獲取關鍵字數據失敗:', error);
+//       setError(error instanceof Error ? error.message : '無法獲取關鍵字數據');
+//     }
+//   }
+
 
 //   const fetchProductLists = async () => {
 //     try {
@@ -46,6 +73,7 @@
 //         throw new Error(`無法獲取商品數據: ${response.status}`);
 //       }
 //       const data = await response.json();
+//       console.log('API 返回的商品數據:', data); // 添加日誌
 //       setProductLists(data);
 //       setFilteredProducts(data);
 //       setError(null);
@@ -57,7 +85,7 @@
 
 //   const fetchCourseProductStatuses = async () => {
 //     try {
-//       const response = await fetch('/api/Statue/Get_Statue_Lists');
+//       const response = await fetch('/api/Status/Get_Status_Lists');
 //       if (!response.ok) {
 //         throw new Error(`無法獲取狀態數據: ${response.status}`);
 //       }
@@ -89,29 +117,37 @@
 //     fetchProductLists();
 //     fetchCourseProductStatuses();
 //     fetchCourseProductTypes();
+//     fetchHeaderType()
 //   }, []);
 
 //   useEffect(() => {
 //     const filterProducts = () => {
+//       if (!productLists.length) {
+//         setFilteredProducts([]);
+//         return;
+//       }
+
 //       let filtered = productLists;
 
 //       if (selectedTypes.length > 0) {
 //         filtered = filtered.filter((product) =>
-//           selectedTypes.some((type) => product.typeIds.includes(type))
+//           Array.isArray(product.CoursePorductTypeArray) &&
+//           selectedTypes.some((type) => product.CoursePorductTypeArray.includes(type))
 //         );
 //       }
 
 //       if (selectedStatuses.length > 0) {
 //         filtered = filtered.filter((product) =>
-//           selectedStatuses.some((status) => product.statusIds.includes(status))
+//           Array.isArray(product.CoursePorductStatueArray) &&
+//           selectedStatuses.some((status) => product.CoursePorductStatueArray.includes(status))
 //         );
 //       }
 
 //       if (searchQuery) {
 //         filtered = filtered.filter(
 //           (product) =>
-//             product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-//             product.description.toLowerCase().includes(searchQuery.toLowerCase())
+//             product.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+//             product.description?.toLowerCase().includes(searchQuery.toLowerCase())
 //         );
 //       }
 
@@ -171,10 +207,20 @@
 //     <div className="container mx-auto px-4 py-8">
 //       <h1 className="text-3xl font-bold mb-6">商店頁面</h1>
 
-//       {/* 複合搜尋列 */}
+
+
+//       <div className="hidden">
+//               {GetHeaderType.map((headertype)=>(
+//         <div key={headertype.id}>
+//           <h1 className="text-4xl font-bold hidden md:flex lg:text-5xl">{headertype.HeaderTypeName}</h1>
+
+//         </div>
+//       ))}
+
+//       </div>
+
 //       <div className="bg-white shadow-md rounded-lg p-6 mb-8">
 //         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-//           {/* 搜索輸入框 */}
 //           <div className="col-span-1">
 //             <label className="block text-sm font-medium text-gray-700 mb-2">搜索課程</label>
 //             <input
@@ -186,7 +232,6 @@
 //             />
 //           </div>
 
-//           {/* 類型篩選 */}
 //           <div className="col-span-1">
 //             <label className="block text-sm font-medium text-gray-700 mb-2">類型篩選</label>
 //             <div className="flex flex-wrap gap-2">
@@ -198,13 +243,12 @@
 //                     onChange={() => handleTypeChange(type.id)}
 //                     className="form-checkbox h-5 w-5 text-blue-600"
 //                   />
-//                   <span className="ml-2 text-sm">{type.typeName}</span>
+//                   <span className="ml-2 text-sm">{type.typename}</span>
 //                 </label>
 //               ))}
 //             </div>
 //           </div>
 
-//           {/* 狀態篩選 */}
 //           <div className="col-span-1">
 //             <label className="block text-sm font-medium text-gray-700 mb-2">狀態篩選</label>
 //             <div className="flex flex-wrap gap-2">
@@ -216,7 +260,7 @@
 //                     onChange={() => handleStatusChange(status.id)}
 //                     className="form-checkbox h-5 w-5 text-blue-600"
 //                   />
-//                   <span className="ml-2 text-sm">{status.statusName}</span>
+//                   <span className="ml-2 text-sm">{status.statuename}</span>
 //                 </label>
 //               ))}
 //             </div>
@@ -224,14 +268,14 @@
 //         </div>
 //       </div>
 
-//       {/* 商品列表 */}
 //       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
 //         {filteredProducts.map((product) => (
 //           <div key={product.id} className="bg-white shadow-md rounded-lg p-4 hover:shadow-lg transition">
 //             <Link href={`/user/${userId}/shop/${product.id}`} onClick={handleProductClick}>
 //               <h2 className="text-lg font-semibold">{product.title}</h2>
 //               <p className="text-gray-600">{product.description}</p>
-//               <p className="text-blue-600 font-bold mt-2">HK${(product.price / 100).toFixed(2)}</p>
+//               <p className="text-blue-600 font-bold mt-2">HK${(product.price ).toFixed(2)}</p>
+//               <p className="text-blue-600 font-bold mt-2">HK${(product.real_price ).toFixed(2)}</p>
 //             </Link>
 //           </div>
 //         ))}
@@ -246,13 +290,12 @@
 // export default ShopPage;
 
 
+"use client";
 
-'use client';
-
-import { useSession } from 'next-auth/react';
-import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useSession } from "next-auth/react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 
 interface CourseProduct {
   id: string;
@@ -266,13 +309,18 @@ interface CourseProduct {
 
 interface CourseProductType {
   id: string;
-  typename: string; // 注意這裡是 typename，而不是 typeName
+  typename: string;
   author: string;
 }
 
 interface CourseProductStatus {
   id: string;
-  statuename: string; // 注意這裡是 statuename，而不是 statusName
+  statuename: string;
+}
+
+interface HeaderType {
+  id: string;
+  HeaderTypeName: string;
 }
 
 const ShopPage = () => {
@@ -286,29 +334,45 @@ const ShopPage = () => {
   const [courseProductStatuses, setCourseProductStatuses] = useState<CourseProductStatus[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [filteredProducts, setFilteredProducts] = useState<CourseProduct[]>([]);
+  const [GetHeaderType, setGetHeaderType] = useState<HeaderType[]>([]);
+
+  const fetchHeaderType = async () => {
+    try {
+      const response = await fetch("/api/Type/Get_HeaderType_Lists");
+      if (!response.ok) {
+        throw new Error(`無法獲取關鍵字數據: ${response.status}`);
+      }
+      const data = await response.json();
+      setGetHeaderType(data);
+      setError(null);
+    } catch (error: unknown) {
+      console.error("獲取關鍵字數據失敗:", error);
+      setError(error instanceof Error ? error.message : "無法獲取關鍵字數據");
+    }
+  };
 
   const fetchProductLists = async () => {
     try {
-      const response = await fetch('/api/product/Get_Product_Lists');
+      const response = await fetch("/api/product/Get_Product_Lists");
       if (!response.ok) {
         throw new Error(`無法獲取商品數據: ${response.status}`);
       }
       const data = await response.json();
-      console.log('API 返回的商品數據:', data); // 添加日誌
+      console.log("API 返回的商品數據:", data);
       setProductLists(data);
       setFilteredProducts(data);
       setError(null);
     } catch (error: unknown) {
-      console.error('獲取商品數據失敗:', error);
-      setError(error instanceof Error ? error.message : '無法獲取商品數據');
+      console.error("獲取商品數據失敗:", error);
+      setError(error instanceof Error ? error.message : "無法獲取商品數據");
     }
   };
 
   const fetchCourseProductStatuses = async () => {
     try {
-      const response = await fetch('/api/Status/Get_Status_Lists');
+      const response = await fetch("/api/Status/Get_Status_Lists");
       if (!response.ok) {
         throw new Error(`無法獲取狀態數據: ${response.status}`);
       }
@@ -316,14 +380,14 @@ const ShopPage = () => {
       setCourseProductStatuses(data);
       setError(null);
     } catch (error: unknown) {
-      console.error('獲取狀態數據失敗:', error);
-      setError(error instanceof Error ? error.message : '無法獲取狀態數據');
+      console.error("獲取狀態數據失敗:", error);
+      setError(error instanceof Error ? error.message : "無法獲取狀態數據");
     }
   };
 
   const fetchCourseProductTypes = async () => {
     try {
-      const response = await fetch('/api/Type/Get_Type_Lists');
+      const response = await fetch("/api/Type/Get_Type_Lists");
       if (!response.ok) {
         throw new Error(`無法獲取類型數據: ${response.status}`);
       }
@@ -331,8 +395,8 @@ const ShopPage = () => {
       setCourseProductTypes(data);
       setError(null);
     } catch (error: unknown) {
-      console.error('獲取類型數據失敗:', error);
-      setError(error instanceof Error ? error.message : '無法獲取類型數據');
+      console.error("獲取類型數據失敗:", error);
+      setError(error instanceof Error ? error.message : "無法獲取類型數據");
     }
   };
 
@@ -340,6 +404,7 @@ const ShopPage = () => {
     fetchProductLists();
     fetchCourseProductStatuses();
     fetchCourseProductTypes();
+    fetchHeaderType();
   }, []);
 
   useEffect(() => {
@@ -398,12 +463,12 @@ const ShopPage = () => {
   const handleProductClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (!session) {
       e.preventDefault();
-      alert('請先登入以查看商品詳情！');
-      router.push('/auth/signin');
+      alert("請先登入以查看商品詳情！");
+      router.push("/auth/signin");
     }
   };
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return <div className="text-center py-10">載入中...</div>;
   }
 
@@ -428,6 +493,14 @@ const ShopPage = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">商店頁面</h1>
+
+      <div className="hidden">
+        {GetHeaderType.map((headertype) => (
+          <div key={headertype.id}>
+            <h1 className="text-4xl font-bold hidden md:flex lg:text-5xl">{headertype.HeaderTypeName}</h1>
+          </div>
+        ))}
+      </div>
 
       <div className="bg-white shadow-md rounded-lg p-6 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -484,8 +557,12 @@ const ShopPage = () => {
             <Link href={`/user/${userId}/shop/${product.id}`} onClick={handleProductClick}>
               <h2 className="text-lg font-semibold">{product.title}</h2>
               <p className="text-gray-600">{product.description}</p>
-              <p className="text-blue-600 font-bold mt-2">HK${(product.price ).toFixed(2)}</p>
-              <p className="text-blue-600 font-bold mt-2">打折後  HK${(product.real_price ).toFixed(2)}</p>
+              {product.price !== 0 && (
+                <p className="text-gray-500 font-bold mt-2 line-through">
+                  HK${product.price.toFixed(2)}
+                </p>
+              )}
+              <p className="text-blue-600 font-bold mt-2">HK${product.real_price.toFixed(2)}</p>
             </Link>
           </div>
         ))}

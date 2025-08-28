@@ -112,7 +112,7 @@ const EditProductForm = () => {
         toast.error(result.error);
       } else {
         toast.success("產品更新成功");
-        router.push("/products");
+        router.push("/admin/productLists");
       }
     } catch {
       toast.error("更新產品時發生錯誤");
@@ -264,7 +264,7 @@ const EditProductForm = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push("/products")}
+              onClick={() => router.push("/admin/productLists")}
             >
               取消
             </Button>

@@ -1,7 +1,7 @@
 import { auth } from "./auth";
 import { NextResponse } from "next/server";
 
-const publicRoutes = ['/', '/login', "/hide/createadmin", "/forgot-password", "/reset-password" , "/admin/UserLists/createUser","/shop","/register","/about"];
+const publicRoutes = ['/', '/login', "/hide/createadmin", "/forgot-password", "/reset-password" , "/admin/UserLists/createUser","/shop","/register","/about","/complaintFrom"];
 
 export default auth((req) => {
   const currentPath = req.nextUrl.pathname;
