@@ -455,233 +455,237 @@ const onSubmit = async (data: CourseDateForm) => {
   console.log('selectedCourse:', selectedCourse);
 
   return (
-    <div className="bg-gray-800 text-white min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-2xl font-bold mb-6">安排課程</h1>
-        {error && (
-          <div className="bg-red-600 text-white p-4 rounded-md mb-6">
-            {error}
-          </div>
-        )}
-        {dateRangeError && (
-          <div className="bg-red-600 text-white p-4 rounded-md mb-6">
-            {dateRangeError}
-          </div>
-        )}
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="md:w-1/2 flex flex-col gap-6">
-            <div className="bg-gray-700 rounded-md p-4 shadow-lg">
-              <h2 className="text-lg font-semibold mb-4">課程列表</h2>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {Array.isArray(courses) && courses.length > 0 ? (
-                  courses.map((course) => (
-                    <div
-                      key={course.id}
-                      onClick={() => setSelectedCourse(course)}
-                      className={`p-3 rounded-md cursor-pointer hover:bg-gray-600 ${
-                        selectedCourse?.id === course.id ? 'bg-gray-600' : ''
-                      }`}
-                    >
-                      <p className="font-medium">{course.title}</p>
-                      <p className="text-sm text-gray-300">{course.courseCode}</p>
-                      <p className="text-sm text-gray-300">
-                        狀態: {course.Producted ? '已成為產品' : '未成為產品'}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-400">沒有可用的課程</p>
-                )}
-              </div>
+    <div className="shadow-lg">
+      <h1 className="text-2xl font-bold mb-6">安排課程</h1>
+      {error && (
+        <div className="bg-red-600 text-white px-3 py-2 rounded-md mb-6">
+          {error}
+        </div>
+      )}
+      {dateRangeError && (
+        <div className="bg-red-600 text-white px-3 py-2 rounded-md mb-6">
+          {dateRangeError}
+        </div>
+      )}
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="md:w-1/2 flex flex-col gap-6">
+          <div className="bg-gray-800 rounded-md px-3 py-2 shadow-lg">
+            <h2 className="text-lg font-semibold mb-4">課程列表</h2>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {Array.isArray(courses) && courses.length > 0 ? (
+                courses.map((course) => (
+                  <div
+                    key={course.id}
+                    onClick={() => setSelectedCourse(course)}
+                    className={`px-3 py-2 rounded-md cursor-pointer hover:bg-gray-700 ${
+                      selectedCourse?.id === course.id ? "bg-gray-700" : ""
+                    }`}
+                  >
+                    <p className="font-medium">{course.title}</p>
+                    <p className="text-sm text-gray-300">{course.courseCode}</p>
+                    <p className="text-sm text-gray-300">
+                      狀態: {course.Producted ? "已成為產品" : "未成為產品"}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-400">沒有可用的課程</p>
+              )}
             </div>
+          </div>
 
-            {selectedCourse && (
-              <div className="bg-gray-700 rounded-md p-4 shadow-lg">
-                <h2 className="text-lg font-semibold mb-4">課程詳情</h2>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium">開始日期</label>
-                    <input
-                      type="date"
-                      {...register('startDate')}
-                      className="mt-1 block w-full rounded-md bg-gray-800 border-gray-600 text-white p-2"
-                    />
-                    {errors.startDate && (
-                      <p className="text-red-500 text-sm">{errors.startDate.message}</p>
+          {selectedCourse && (
+            <div className="bg-gray-800 rounded-md px-3 py-2 shadow-lg">
+              <h2 className="text-lg font-semibold mb-4">課程詳情</h2>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium">開始日期</label>
+                  <input
+                    type="date"
+                    {...register("startDate")}
+                    className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white px-3 py-2"
+                  />
+                  {errors.startDate && (
+                    <p className="text-red-500 text-sm">{errors.startDate.message}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">結束日期</label>
+                  <input
+                    type="date"
+                    {...register("endDate")}
+                    className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white px-3 py-2"
+                  />
+                  {errors.endDate && (
+                    <p className="text-red-500 text-sm">{errors.endDate.message}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">時間段</label>
+                  <div className="mt-1 flex flex-wrap gap-2">
+                    {selectedCourse &&
+                    Array.isArray(selectedCourse.CourseTimeRanges) &&
+                    selectedCourse.CourseTimeRanges.length > 0 ? (
+                      selectedCourse.CourseTimeRanges.map((range) => (
+                        <button
+                          key={range.id}
+                          type="button"
+                          onClick={() => handleTimeRangeSelect(range.timeRange)}
+                          className={`px-3 py-2 rounded-md text-sm font-medium ${
+                            selectedTimeRange === range.timeRange
+                              ? "bg-blue-600 hover:bg-blue-700"
+                              : "bg-gray-700 hover:bg-gray-600"
+                          }`}
+                        >
+                          {timeRangeOptions[range.timeRange]?.label || range.timeRange}
+                        </button>
+                      ))
+                    ) : (
+                      <p className="text-gray-400">無可用時間段</p>
                     )}
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium">結束日期</label>
-                    <input
-                      type="date"
-                      {...register('endDate')}
-                      className="mt-1 block w-full rounded-md bg-gray-800 border-gray-600 text-white p-2"
-                    />
-                    {errors.endDate && (
-                      <p className="text-red-500 text-sm">{errors.endDate.message}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium">時間段</label>
-                    <div className="mt-1 flex flex-wrap gap-2">
-                      {selectedCourse && Array.isArray(selectedCourse.CourseTimeRanges) && selectedCourse.CourseTimeRanges.length > 0 ? (
-                        selectedCourse.CourseTimeRanges.map((range) => (
-                          <button
-                            key={range.id}
-                            type="button"
-                            onClick={() => handleTimeRangeSelect(range.timeRange)}
-                            className={`px-4 py-2 rounded-md ${
-                              selectedTimeRange === range.timeRange ? 'bg-blue-600' : 'bg-gray-600 hover:bg-gray-500'
-                            }`}
-                          >
-                            {timeRangeOptions[range.timeRange]?.label || range.timeRange}
-                          </button>
-                        ))
-                      ) : (
-                        <p className="text-gray-400">無可用時間段</p>
+                </div>
+                {selectedTimeRange && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium">開始時間</label>
+                      <input
+                        type="time"
+                        {...register("startTime")}
+                        min={timeRangeOptions[selectedTimeRange].start}
+                        max={timeRangeOptions[selectedTimeRange].end}
+                        className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white px-3 py-2"
+                      />
+                      {errors.startTime && (
+                        <p className="text-red-500 text-sm">{errors.startTime.message}</p>
                       )}
                     </div>
-                  </div>
-                  {selectedTimeRange && (
-                    <>
-                      <div>
-                        <label className="block text-sm font-medium">開始時間</label>
-                        <input
-                          type="time"
-                          {...register('startTime')}
-                          min={timeRangeOptions[selectedTimeRange].start}
-                          max={timeRangeOptions[selectedTimeRange].end}
-                          className="mt-1 block w-full rounded-md bg-gray-800 border-gray-600 text-white p-2"
-                        />
-                        {errors.startTime && (
-                          <p className="text-red-500 text-sm">{errors.startTime.message}</p>
-                        )}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium">結束時間</label>
-                        <input
-                          type="time"
-                          {...register('endTime')}
-                          min={timeRangeOptions[selectedTimeRange].start}
-                          max={timeRangeOptions[selectedTimeRange].end}
-                          className="mt-1 block w-full rounded-md bg-gray-800 border-gray-600 text-white p-2"
-                        />
-                        {errors.endTime && (
-                          <p className="text-red-500 text-sm">{errors.endTime.message}</p>
-                        )}
-                      </div>
-                    </>
-                  )}
-                  <div>
-                    <label className="block text-sm font-medium">週份</label>
-                    <select
-                      {...register('weekday')}
-                      className="mt-1 block w-full rounded-md bg-gray-800 border-gray-600 text-white p-2"
-                    >
-                      <option value="">選擇星期</option>
-                      {weekdays.map((weekday) => (
-                        <option key={weekday.value} value={weekday.value}>
-                          {weekday.label}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.weekday && (
-                      <p className="text-red-500 text-sm">{errors.weekday.message}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium">課室</label>
-                    <input
-                      type="text"
-                      {...register('classroom')}
-                      className="mt-1 block w-full rounded-md bg-gray-800 border-gray-600 text-white p-2"
-                      placeholder="輸入課室名稱（可選）"
-                    />
-                    {errors.classroom && (
-                      <p className="text-red-500 text-sm">{errors.classroom.message}</p>
-                    )}
-                  </div>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 rounded-md hover:bg-blue-700"
+                    <div>
+                      <label className="block text-sm font-medium">結束時間</label>
+                      <input
+                        type="time"
+                        {...register("endTime")}
+                        min={timeRangeOptions[selectedTimeRange].start}
+                        max={timeRangeOptions[selectedTimeRange].end}
+                        className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white px-3 py-2"
+                      />
+                      {errors.endTime && (
+                        <p className="text-red-500 text-sm">{errors.endTime.message}</p>
+                      )}
+                    </div>
+                  </>
+                )}
+                <div>
+                  <label className="block text-sm font-medium">週份</label>
+                  <select
+                    {...register("weekday")}
+                    className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white px-3 py-2"
                   >
-                    更新課程
-                  </button>
-                </form>
-              </div>
-            )}
-          </div>
-
-          <div className="md:w-1/2">
-            <div className="bg-gray-700 rounded-md p-4 shadow-lg">
-              <h2 className="text-lg font-semibold mb-4">課程月曆</h2>
-              <FullCalendar
-                ref={calendarRef}
-                plugins={[dayGridPlugin, interactionPlugin]}
-                initialView="dayGridMonth"
-                events={calendarEvents}
-                dateClick={handleDateClick}
-                editable={true}
-                selectable={true}
-                eventBackgroundColor="#2563eb"
-                eventBorderColor="#2563eb"
-                eventTextColor="#ffffff"
-                headerToolbar={{
-                  left: 'prev,next today',
-                  center: 'title',
-                  right: 'dayGridMonth,dayGridWeek,dayGridDay',
-                }}
-                height="auto"
-                eventDrop={handleEventDrop}
-                validRange={
-                  startDate && startDate !== '' && endDate && endDate !== ''
-                    ? {
-                        start: parseISO(startDate),
-                        end: addDays(parseISO(endDate), 1),
-                      }
-                    : undefined
-                }
-              />
+                    <option value="">選擇星期</option>
+                    {weekdays.map((weekday) => (
+                      <option key={weekday.value} value={weekday.value}>
+                        {weekday.label}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.weekday && (
+                    <p className="text-red-500 text-sm">{errors.weekday.message}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">課室</label>
+                  <input
+                    type="text"
+                    {...register("classroom")}
+                    className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white px-3 py-2"
+                    placeholder="輸入課室名稱（可選）"
+                  />
+                  {errors.classroom && (
+                    <p className="text-red-500 text-sm">{errors.classroom.message}</p>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  className="px-3 py-2 bg-blue-600 rounded-md text-sm font-medium hover:bg-blue-700"
+                >
+                  更新課程
+                </button>
+              </form>
             </div>
-            <style jsx>{`
-              :global(.fc) {
-                background-color: #4b5563;
-                border-radius: 0.375rem;
-                padding: 1rem;
+          )}
+        </div>
+
+        <div className="md:w-1/2">
+          <div className="bg-gray-800 rounded-md px-3 py-2 shadow-lg">
+            <h2 className="text-lg font-semibold mb-4">課程月曆</h2>
+            <FullCalendar
+              ref={calendarRef}
+              plugins={[dayGridPlugin, interactionPlugin]}
+              initialView="dayGridMonth"
+              events={calendarEvents}
+              dateClick={handleDateClick}
+              editable={true}
+              selectable={true}
+              eventBackgroundColor="#2563eb"
+              eventBorderColor="#2563eb"
+              eventTextColor="#ffffff"
+              headerToolbar={{
+                left: "prev,next today",
+                center: "title",
+                right: "dayGridMonth,dayGridWeek,dayGridDay",
+              }}
+              height="auto"
+              eventDrop={handleEventDrop}
+              validRange={
+                startDate && startDate !== "" && endDate && endDate !== ""
+                  ? {
+                      start: parseISO(startDate),
+                      end: addDays(parseISO(endDate), 1),
+                    }
+                  : undefined
               }
-              :global(.fc-toolbar) {
-                background-color: #374151;
-                color: #ffffff;
-                border-radius: 0.375rem 0.375rem 0 0;
-              }
-              :global(.fc-button) {
-                background-color: #2563eb !important;
-                border: none !important;
-                border-radius: 0.25rem;
-                margin: 0.25rem;
-              }
-              :global(.fc-button:hover) {
-                background-color: #1e40af !important;
-              }
-              :global(.fc-daygrid-day) {
-                background-color: #4b5563;
-                color: #ffffff;
-              }
-              :global(.fc-daygrid-day-number) {
-                color: #ffffff;
-              }
-              :global(.fc-col-header-cell) {
-                background-color: #374151;
-                color: #ffffff;
-              }
-              :global(.fc-day-disabled) {
-                background-color: #1f2937 !important;
-                opacity: 0.5;
-              }
-            `}</style>
+            />
           </div>
         </div>
       </div>
+      <style jsx>{`
+        :global(.fc) {
+          background-color: #1f2937;
+          border-radius: 0.375rem;
+          padding: 0.5rem;
+        }
+        :global(.fc-toolbar) {
+          background-color: #374151;
+          color: #ffffff;
+          border-radius: 0.375rem 0.375rem 0 0;
+          padding: 0.5rem;
+        }
+        :global(.fc-button) {
+          background-color: #2563eb !important;
+          border: none !important;
+          border-radius: 0.25rem;
+          margin: 0.25rem;
+          padding: 0.5rem 1rem;
+        }
+        :global(.fc-button:hover) {
+          background-color: #1e40af !important;
+        }
+        :global(.fc-daygrid-day) {
+          background-color: #1f2937;
+          color: #ffffff;
+        }
+        :global(.fc-daygrid-day-number) {
+          color: #ffffff;
+        }
+        :global(.fc-col-header-cell) {
+          background-color: #374151;
+          color: #ffffff;
+        }
+        :global(.fc-day-disabled) {
+          background-color: #111827 !important;
+          opacity: 0.5;
+        }
+      `}</style>
     </div>
   );
 };

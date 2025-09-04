@@ -152,7 +152,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
 import DatePicker, { DateObject } from "react-multi-date-picker";
 import { toast } from "react-toastify";
 import { useParams, useRouter } from "next/navigation";
@@ -239,52 +239,51 @@ const EditTeacherHolidayForm = () => {
   };
 
   return (
-    <div className="bg-gray-800 text-white min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <h1 className="text-2xl font-bold mb-6">編輯教師假期</h1>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-white">選擇假期日期</FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        value={field.value.map((date) => new Date(date))}
-                        onChange={(dates: DateObject[]) => {
-                          const formattedDates = dates
-                            ? dates.map((date) => date.format("YYYY-MM-DD"))
-                            : [];
-                          field.onChange(formattedDates);
-                        }}
-                        multiple
-                        format="YYYY-MM-DD"
-                        disabled={isPending}
-                        inputClass="bg-gray-700 text-white border-gray-600 focus:border-gray-500 w-full p-2 rounded-md"
-                        aria-label="假期日期"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-red-400" />
-                  </FormItem>
-                )}
-              />
+    <div className="bg-gray-800 rounded-md px-3 py-2 shadow-lg">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-white">選擇假期日期</FormLabel>
+                  <FormControl>
+                    <DatePicker
+                      value={field.value.map((date) => new Date(date))}
+                      onChange={(dates: DateObject[]) => {
+                        const formattedDates = dates
+                          ? dates.map((date) => date.format("YYYY-MM-DD"))
+                          : [];
+                        field.onChange(formattedDates);
+                      }}
+                      multiple
+                      format="YYYY-MM-DD"
+                      disabled={isPending}
+                      inputClass="bg-gray-700 border-gray-600 text-white px-3 py-2 rounded-md w-full focus:border-gray-500"
+                      aria-label="假期日期"
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+          </div>
+          {form.formState.errors.root && (
+            <div className="bg-red-600 text-white px-3 py-2 rounded-md">
+              {form.formState.errors.root.message}
             </div>
-            {form.formState.errors.root && (
-              <p className="text-red-500 text-sm">{form.formState.errors.root.message}</p>
-            )}
-            <Button
-              type="submit"
-              disabled={isPending}
-              className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
-            >
-              {isPending ? "提交中..." : "提交"}
-            </Button>
-          </form>
-        </Form>
-      </div>
+          )}
+          <Button
+            type="submit"
+            disabled={isPending}
+            className="px-3 py-2 bg-blue-600 rounded-md text-sm font-medium hover:bg-blue-700 text-white"
+          >
+            {isPending ? "提交中..." : "提交"}
+          </Button>
+        </form>
+      </Form>
     </div>
   );
 };

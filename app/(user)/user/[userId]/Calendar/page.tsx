@@ -112,7 +112,7 @@ export default function UserCalendarPage() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">我的日曆</h1>
           <Link
-            href={`/user/${userId}/courses`}
+            href={`/user/${userId}/CourseLists`}
             className="px-4 py-2 bg-gray-700 text-white rounded-md text-sm font-medium hover:bg-gray-600 transition"
           >
             返回課程列表

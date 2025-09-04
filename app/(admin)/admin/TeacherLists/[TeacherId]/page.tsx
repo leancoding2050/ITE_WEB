@@ -113,6 +113,7 @@
 
 "use client";
 
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -223,6 +224,9 @@ const TeacherDatabyIdPage = () => {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Link href="/admin/TeacherLists">
+          返回
+        </Link>
         <div className="bg-gray-800 shadow-lg rounded-md p-6">
           <h1 className="text-2xl font-bold mb-6">教師資料</h1>
           <div className="space-y-4">

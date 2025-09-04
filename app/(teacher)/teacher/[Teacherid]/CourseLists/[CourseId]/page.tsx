@@ -73,6 +73,9 @@ const Course_Data_by_Id = () => {
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-2xl font-bold mb-6">課程詳情</h1>
+        <Link href={`/teacher/${TeacherId}/CourseLists`}>
+        <h1 className="text-2xl font-bold mb-6">返回</h1>
+        </Link>
         <Link href={`/teacher/${TeacherId}/CourseLists/${courseId}/edit`}>
         <h1 className="text-2xl font-bold mb-6">修改課程</h1>
         </Link>

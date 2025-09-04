@@ -586,6 +586,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { format, parseISO, addDays, differenceInDays, getDay, addWeeks } from "date-fns";
 import { useRouter } from "next/navigation";
 import { EventDropArg } from "@fullcalendar/core";
+import Link from "next/link";
 
 const CourseDateSchema = z.object({
   startDate: z.string().optional().nullable(),
@@ -927,6 +928,9 @@ const ArrangeCoursePage = () => {
   return (
     <div className="bg-gray-800 text-white min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Link href={'/admin/CourseLists'}>
+          返回
+        </Link>
         <h1 className="text-2xl font-bold mb-6">安排課程</h1>
         {dateRangeError && (
           <div className="bg-red-600 text-white p-4 rounded-md mb-6">
