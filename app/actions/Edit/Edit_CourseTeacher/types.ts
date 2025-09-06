@@ -59,15 +59,16 @@ export type CourseTimeRangeReturnType = {
   updatedAt: Date;
 };
 
+// app/actions/Edit/Edit_CourseTeacher/types.ts
 export type CourseReturnType = {
   id: string;
-  courseId: string; // 新增 courseId 字段
+  courseId: string;
   title: string;
   description: string;
   courseCode: string;
   schoolName: string;
-  numberOfDays: number;
-  timeHours: number;
+  numberOfDays: number; // 保持 number，因為 TypeScript 不區分 Int 和 Float
+  timeHours: number; // 保持 number，因為 TypeScript 不區分 Int 和 Float
   timeRanges: CourseTimeRangeReturnType[];
   teacher: string[];
   teacherId: string;

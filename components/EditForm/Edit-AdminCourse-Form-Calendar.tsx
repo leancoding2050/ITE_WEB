@@ -345,6 +345,8 @@ const onSubmit = async (data: CourseDateForm) => {
       throw new Error('更新成功但未返回課程數據');
     }
 
+    console.log('更新成功，返回的課程數據：', result.course);
+
     // 使用雙重斷言解決類型問題
     const updatedCourse = result.course as unknown as Course;
     

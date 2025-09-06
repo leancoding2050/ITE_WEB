@@ -170,6 +170,8 @@ const AccountsListsPage = () => {
     );
   }
 
+  console.log("filteredTeachers ： ", filteredTeachers,"-- END --")
+
   return (
     <div className="min-h-screen bg-gray-100">
       
@@ -212,6 +214,7 @@ const AccountsListsPage = () => {
               </table>
             </div>
           </div>
+          
 
           {/* 右側：教師課程時間 */}
           <div className="w-full lg:w-1/2 bg-white rounded-lg shadow-md p-6">
@@ -269,7 +272,7 @@ const AccountsListsPage = () => {
             </div>
             
             {/* 教師課程列表 */}
-            <div className="space-y-6">
+            {/* <div className="space-y-6">
               {filteredTeachers.length > 0 ? (
                 filteredTeachers.map(teacher => (
                   <div key={teacher.id} className="border border-gray-200 rounded-lg p-4">
@@ -308,7 +311,48 @@ const AccountsListsPage = () => {
               ) : (
                 <p className="text-gray-500 text-center py-8">沒有符合條件的教師課程</p>
               )}
+            </div> */}
+
+            <div className="space-y-6">
+  {filteredTeachers.length > 0 ? (
+    filteredTeachers.map(teacher => (
+      <div key={teacher.id} className="border border-gray-200 rounded-lg p-4">
+        <h3 className="font-medium text-lg text-gray-800 mb-2">{teacher.name}</h3>
+        {teacher.Course.length > 0 ? (
+          teacher.Course.map(course => (
+            <div key={course.id} className="ml-4 mb-4">
+              <h4 className="font-medium text-gray-700 mb-1">{course.title}</h4>
+              <p className="text-sm text-gray-600 mb-2">
+                總時數: {course.timeHours * course.Coursedates.length} 小時
+              </p>
+              {course.Coursedates.length > 0 && (
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600 mb-1">上課日期:</p>
+                  <ul className="list-disc pl-5 text-sm text-gray-500">
+                    {course.Coursedates.map((date, index) => (
+                      <li key={index}>
+                        {new Date(date).toLocaleDateString('zh-TW', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          weekday: 'short'
+                        })}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
+          ))
+        ) : (
+          <p className="text-sm text-gray-500">沒有符合條件的課程</p>
+        )}
+      </div>
+    ))
+  ) : (
+    <p className="text-gray-500 text-center py-8">沒有符合條件的教師課程</p>
+  )}
+</div>
           </div>
         </div>
       </div>

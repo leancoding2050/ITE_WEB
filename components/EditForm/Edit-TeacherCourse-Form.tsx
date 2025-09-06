@@ -351,50 +351,52 @@ const EditCourseTeacherForm = () => {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="numberOfDays"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-white">課程天數</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        disabled={isPending}
-                        placeholder="輸入課程天數"
-                        type="number"
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                        value={field.value || ""}
-                        className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
-                        aria-label="課程天數"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-red-400" />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="timeHours"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-white">課程時數</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        disabled={isPending}
-                        placeholder="輸入課程時數"
-                        type="number"
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                        value={field.value || ""}
-                        className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
-                        aria-label="課程時數"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-red-400" />
-                  </FormItem>
-                )}
-              />
+             <FormField
+  control={form.control}
+  name="numberOfDays"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel className="text-white">課程天數</FormLabel>
+      <FormControl>
+        <Input
+          {...field}
+          disabled={isPending}
+          placeholder="輸入課程天數（可包含小數）"
+          type="number"
+          step="0.1" // 允許小數，步長為 0.1
+          onChange={(e) => field.onChange(Number(e.target.value) || 0)} // 確保空值時返回 0
+          value={field.value || ""}
+          className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
+          aria-label="課程天數"
+        />
+      </FormControl>
+      <FormMessage className="text-red-400" />
+    </FormItem>
+  )}
+/>
+<FormField
+  control={form.control}
+  name="timeHours"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel className="text-white">每堂時數</FormLabel>
+      <FormControl>
+        <Input
+          {...field}
+          disabled={isPending}
+          placeholder="輸入課程時數（可包含小數）"
+          type="number"
+          step="0.1" // 允許小數，步長為 0.1
+          onChange={(e) => field.onChange(Number(e.target.value) || 0)} // 確保空值時返回 0
+          value={field.value || ""}
+          className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
+          aria-label="課程時數"
+        />
+      </FormControl>
+      <FormMessage className="text-red-400" />
+    </FormItem>
+  )}
+/>
               <FormField
                 control={form.control}
                 name="teacher"
@@ -683,6 +685,10 @@ const EditCourseTeacherForm = () => {
                         </FormItem>
                       )}
                     />
+                    <div
+                      className="hidden"
+                    >
+
                     <FormField
                       control={form.control}
                       name={`timeRanges.${index}.starttime`}
@@ -723,6 +729,7 @@ const EditCourseTeacherForm = () => {
                         </FormItem>
                       )}
                     />
+                    </div>
                     <Button
                       type="button"
                       variant="destructive"

@@ -9,6 +9,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       where: {
         id: String(id), // 確保 id 是字符串類型
       },
+      include: {
+        CourseTimeRanges: true,
+      },
     });
 
     if (!res) {

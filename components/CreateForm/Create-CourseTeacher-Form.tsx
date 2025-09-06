@@ -40,6 +40,7 @@ interface CourseModule {
   id: string;
   title: string;
   description: string;
+  TeacherId: string; // 新增 TeacherId
 }
 
 interface Teacher {
@@ -56,12 +57,13 @@ const timeOptions = [
 // type TimeRangeValue = "morning" | "afternoon" | "evening" | "full_day";
 
 const CreateCourseTeacherForm = () => {
-  const [isPending, startTransition] = useTransition();
+const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const params = useParams();
   const teacherId = params.Teacherid as string;
   const [courseTypes, setCourseTypes] = useState<CourseType[]>([]);
   const [courseModules, setCourseModules] = useState<CourseModule[]>([]);
+  const [filteredCourseModules, setFilteredCourseModules] = useState<CourseModule[]>([]); // 新增狀態
   const [teacherData, setTeacherData] = useState<Teacher | null>(null);
 
   const form = useForm<z.infer<typeof CreateCourseTeacherSchema>>({
@@ -126,6 +128,22 @@ const CreateCourseTeacherForm = () => {
   }, [teacherData, form]);
 
   // 獲取數據
+  // useEffect(() => {
+  //   const fetchTypesData = async () => {
+  //     try {
+  //       const res = await fetch("/api/Type/Get_Type_Lists");
+  //       if (!res.ok) {
+  //         throw new Error(`無法獲取課程類型: ${res.status}`);
+  //       }
+  //       const data: CourseType[] = await res.json();
+  //       setCourseTypes(data);
+  //     } catch (error) {
+  //       toast.error(error instanceof Error ? error.message : "無法載入課程類型");
+  //       setCourseTypes([]);
+  //     }
+  //   };
+
+// 獲取數據並篩選 courseModules
   useEffect(() => {
     const fetchTypesData = async () => {
       try {
@@ -141,6 +159,19 @@ const CreateCourseTeacherForm = () => {
       }
     };
 
+    // const fetchCourseModules = async () => {
+    //   try {
+    //     const res = await fetch("/api/Course/Get_CourseModul_Lists");
+    //     if (!res.ok) {
+    //       throw new Error(`無法獲取課程模組: ${res.status}`);
+    //     }
+    //     const data: CourseModule[] = await res.json();
+    //     setCourseModules(data);
+    //   } catch (error) {
+    //     toast.error(error instanceof Error ? error.message : "無法載入課程模組");
+    //     setCourseModules([]);
+    //   }
+    // };
     const fetchCourseModules = async () => {
       try {
         const res = await fetch("/api/Course/Get_CourseModul_Lists");
@@ -149,13 +180,36 @@ const CreateCourseTeacherForm = () => {
         }
         const data: CourseModule[] = await res.json();
         setCourseModules(data);
+        // 篩選出 TeacherId 與 teacherId 匹配的模組
+        const filtered = data.filter((module) => module.TeacherId === teacherId);
+        setFilteredCourseModules(filtered);
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "無法載入課程模組");
         setCourseModules([]);
+        setFilteredCourseModules([]);
       }
     };
 
-    const fetchTeacherData = async () => {
+  //   const fetchTeacherData = async () => {
+  //     try {
+  //       const res = await fetch(`/api/user/Get_User_Lists_by_Id/${teacherId}`);
+  //       if (!res.ok) {
+  //         throw new Error(`無法獲取教師資料: ${res.status}`);
+  //       }
+  //       const data: Teacher = await res.json();
+  //       setTeacherData(data);
+  //     } catch (error) {
+  //       toast.error(error instanceof Error ? error.message : "無法載入教師資料");
+  //       setTeacherData(null);
+  //     }
+  //   };
+
+  //   fetchTeacherData();
+  //   fetchTypesData();
+  //   fetchCourseModules();
+  // }, [teacherId]);
+
+  const fetchTeacherData = async () => {
       try {
         const res = await fetch(`/api/user/Get_User_Lists_by_Id/${teacherId}`);
         if (!res.ok) {
@@ -277,50 +331,52 @@ const CreateCourseTeacherForm = () => {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="numberOfDays"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-white">課程天數</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        disabled={isPending}
-                        placeholder="輸入課程天數"
-                        type="number"
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                        value={field.value || ""}
-                        className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
-                        aria-label="課程天數"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-red-400" />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="timeHours"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-white">課程時數</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        disabled={isPending}
-                        placeholder="輸入課程時數"
-                        type="number"
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                        value={field.value || ""}
-                        className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
-                        aria-label="課程時數"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-red-400" />
-                  </FormItem>
-                )}
-              />
+             <FormField
+  control={form.control}
+  name="numberOfDays"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel className="text-white">課程天數</FormLabel>
+      <FormControl>
+        <Input
+          {...field}
+          disabled={isPending}
+          placeholder="輸入課程天數（可包含小數）"
+          type="number"
+          step="0.1" // 允許小數，步長為 0.1
+          onChange={(e) => field.onChange(Number(e.target.value) || 0)} // 確保空值時返回 0
+          value={field.value || ""}
+          className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
+          aria-label="課程天數"
+        />
+      </FormControl>
+      <FormMessage className="text-red-400" />
+    </FormItem>
+  )}
+/>
+<FormField
+  control={form.control}
+  name="timeHours"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel className="text-white">每堂時數</FormLabel>
+      <FormControl>
+        <Input
+          {...field}
+          disabled={isPending}
+          placeholder="輸入課程時數（可包含小數）"
+          type="number"
+          step="0.1" // 允許小數，步長為 0.1
+          onChange={(e) => field.onChange(Number(e.target.value) || 0)} // 確保空值時返回 0
+          value={field.value || ""}
+          className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
+          aria-label="課程時數"
+        />
+      </FormControl>
+      <FormMessage className="text-red-400" />
+    </FormItem>
+  )}
+/>
               <FormField
                 control={form.control}
                 name="teacher"
@@ -387,7 +443,7 @@ const CreateCourseTeacherForm = () => {
                   </FormItem>
                 )}
               />
-              <FormField
+              {/* <FormField
                 control={form.control}
                 name="courseModuleId"
                 render={({ field }) => (
@@ -418,7 +474,41 @@ const CreateCourseTeacherForm = () => {
                     <FormMessage className="text-red-400" />
                   </FormItem>
                 )}
-              />
+              /> */}
+
+<FormField
+  control={form.control}
+  name="courseModuleId"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel className="text-white">課程模組</FormLabel>
+      <FormControl>
+        <Select
+          onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+          value={field.value ?? "none"}
+          disabled={isPending}
+        >
+          <SelectTrigger
+            className="bg-gray-700 text-white border-gray-600 focus:border-gray-500"
+            aria-label="課程模組"
+          >
+            <SelectValue placeholder="選擇課程模組" />
+          </SelectTrigger>
+          <SelectContent className="bg-gray-700 text-white border-gray-600">
+            <SelectItem value="none">無模組</SelectItem>
+            {filteredCourseModules.map((module) => ( // 使用 filteredCourseModules
+              <SelectItem key={module.id} value={module.id}>
+                {module.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FormControl>
+      <FormMessage className="text-red-400" />
+    </FormItem>
+  )}
+/>
+
               <FormField
                 control={form.control}
                 name="type"

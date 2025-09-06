@@ -1,5 +1,3 @@
-
-// app/actions/Edit/Edit_CourseTeacher/schema.ts
 import { z } from 'zod';
 
 export const EditCourseTeacherSchema = z.object({
@@ -8,8 +6,8 @@ export const EditCourseTeacherSchema = z.object({
   description: z.string().min(1, '描述不可為空'),
   courseCode: z.string().min(1, '課程代碼不可為空'),
   schoolName: z.string().min(1, '學校名稱不可為空'),
-  numberOfDays: z.number().int().min(1, '課程天數必須為正整數'),
-  timeHours: z.number().int().min(0, '課程時數必須為正整數'),
+  numberOfDays: z.number().min(0.1, '課程天數必須為正數'), // 從 int() 改為 number()，允許小數
+  timeHours: z.number().min(0, '課程時數必須為正數'), // 從 int() 改為 number()，允許小數
   timeRanges: z
     .array(
       z.object({
